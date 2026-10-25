@@ -15,6 +15,8 @@ test('npm tarball contains the executable skill without development files', asyn
   assert.equal(manifest.version, '0.1.0');
   assert.equal(manifest.license, 'Apache-2.0');
   assert.equal(manifest.private, undefined);
+  assert.deepEqual(manifest.repository, { type: 'git',
+    url: 'git+https://github.com/postfix/autocode.git' });
   assert.equal(manifest.bin?.autocode, 'scripts/autocode.mjs');
   const cache = await mkdtemp(join(tmpdir(), 'autocode-npm-cache-'));
   let output;

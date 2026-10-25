@@ -3,7 +3,10 @@
   "version": "0.1.0",
   "description": "JavaScript workflow skill for Codex and Claude agents",
   "license": "Apache-2.0",
-  "repository": "https://github.com/postfix/autocode",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/postfix/autocode.git"
+  },
   "type": "module",
   "bin": {
     "autocode": "scripts/autocode.mjs"
