@@ -2,23 +2,19 @@
 
 Autocode needs Node.js 20 or newer and authentication for whichever provider you use.
 
-## Install the npm package
+## Install the command
 
-Install the package globally, then link its skill files into both hosts:
+Install the runner and its SDK dependencies globally:
 
 ```bash
 npm install -g autocode-skill
-AUTOCODE_DIR="$(npm root -g)/autocode-skill"
-mkdir -p ~/.codex/skills ~/.claude/skills
-ln -s "$AUTOCODE_DIR" ~/.codex/skills/autocode
-ln -s "$AUTOCODE_DIR" ~/.claude/skills/autocode
 ```
 
-The npm install provides the `autocode` command and both native SDK dependencies. The links make `SKILL.md` discoverable to Codex and Claude. If either skill path already exists, inspect it and move or replace it deliberately before creating the link; keep backups outside the `skills` directories so they are not discovered as duplicate skills.
+This provides the `autocode` command. The host plugins below provide the skill and its session hooks. If your npm global bin directory is not on `PATH`, add that directory to `PATH` so the skill can run `autocode`.
 
-## Enable session reminders
+## Install the skill and session hooks
 
-The skill works on explicit requests without a plugin. To enable one-turn `ultracode` keyword detection and persistent `autocode on` / `autocode off` reminders, install the hook plugin from the public repository. The plugin contains hooks only; the skill link above remains the single skill installation.
+Install the Autocode plugin from the public repository. It supplies the skill and the one-turn `ultracode` keyword hook plus persistent `autocode on` / `autocode off` reminders. Use the plugin installation as the single skill installation; remove any older `~/.codex/skills/autocode` or `~/.claude/skills/autocode` symlink after checking where it points.
 
 Codex CLI:
 
@@ -34,7 +30,7 @@ In Codex, open `/hooks`, trust the Autocode lifecycle hooks, and start a new thr
 /plugin install autocode@autocode
 ```
 
-Start a new Claude session after installation. Plain `ultracode` in a human request opts that turn into a workflow; `autocode on` or `ultracode on` enables standing mode for substantive tasks until `autocode off` or `ultracode off`. The plugin stores per-session mode state; npm installation by itself does not register the hooks.
+Start a new Claude session after installation. Plain `ultracode` in a human request opts that turn into a workflow; `autocode on` or `ultracode on` enables standing mode for substantive tasks until `autocode off` or `ultracode off`. The plugin stores per-session mode state; npm installation by itself does not register the skill or hooks.
 
 ## Install from a checkout
 
@@ -47,7 +43,7 @@ npm ci
 npm test
 ```
 
-Point both hosts at the same checkout:
+For a skill-only checkout without plugin hooks, point both hosts at the same checkout:
 
 ```bash
 mkdir -p ~/.codex/skills ~/.claude/skills
@@ -59,7 +55,7 @@ Start a new Codex or Claude session to load the skill. In Codex, invoke it with 
 
 ## Check the installation
 
-For a checkout, run `npm test` in the checkout. For an npm installation, run `command -v autocode` and confirm both `~/.codex/skills/autocode/SKILL.md` and `~/.claude/skills/autocode/SKILL.md` exist.
+For a checkout, run `npm test` in the checkout. For an npm and plugin installation, run `command -v autocode`, `codex plugin list`, and `claude plugin details autocode@autocode`. Each host should show one active Autocode skill.
 
 Then ask Codex to exercise the installed skill:
 

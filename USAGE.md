@@ -10,7 +10,7 @@ $autocode Investigate the failing tests in this project in parallel, verify the 
 
 In Claude, ask it to use the `autocode` skill with the same request. The skill authors the JavaScript workflow and runs it. You can ask for Codex, Claude, or both as delegated providers, and specify the model or effort for individual tasks. The authoring agent can use higher effort than the delegated agents. Review the reported `failures` alongside the result.
 
-If you installed the optional [session hooks](INSTALL.md#enable-session-reminders), a human request using the unquoted word `ultracode` triggers Autocode for that turn. `autocode on` enables standing mode for substantive tasks; `autocode off` exits it. The skill remains usable through explicit invocation without hooks.
+With the [host plugin](INSTALL.md#install-the-skill-and-session-hooks), a human request using the unquoted word `ultracode` triggers Autocode for that turn. `autocode on` enables standing mode for substantive tasks; `autocode off` exits it. A skill-only checkout remains usable through explicit invocation without hooks.
 
 ## Write a workflow yourself
 
@@ -34,7 +34,7 @@ autocode run inspect.js \
   --provider codex --run-dir .codex/autocode-runs/inspect
 ```
 
-The `autocode` command is installed by `npm install -g autocode-skill`. From a source checkout, run `node "$HOME/.codex/skills/autocode/scripts/autocode.mjs"` with the same arguments.
+The `autocode` command is installed by `npm install -g autocode-skill`. From a source checkout, run `node scripts/autocode.mjs` with the same arguments while in that checkout.
 
 `--provider` selects the default for calls without `opts.provider`. Use `--provider claude` to change it. Use `--args '{"target":"src"}'` to supply a JSON value; omitted `args` is `undefined`. `--cwd <directory>` selects the project directory for both SDKs. `--budget <tokens>` sets a soft output-token target: calls already running can make the final total exceed it.
 

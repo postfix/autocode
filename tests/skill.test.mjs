@@ -12,9 +12,10 @@ test('skill includes usable instructions and templates', async () => {
   const skill = await readFile(join(root, 'SKILL.md'), 'utf8');
   assert.match(skill, /^---\nname: autocode\n/m);
   assert.doesNotMatch(skill, /\[TODO/);
-  assert.match(skill, /scripts\/autocode\.mjs" run/);
+  assert.match(skill, /\nautocode run workflow\.js/);
   for (const file of [
     'references/authoring.md',
+    'references/source-prompts/authoring.md',
     'references/quality-patterns.md',
     'assets/templates/review-and-verify.js', 'assets/templates/parallel-scout.js',
     'assets/templates/exhaustive-review.js', 'assets/templates/mixed-provider.js',

@@ -27,7 +27,7 @@ Save the script in the project where it will run. It is ready to run when its li
 From that project directory, run the script with:
 
 ```bash
-node "$HOME/.codex/skills/autocode/scripts/autocode.mjs" run workflow.js --provider codex --args '{"files":["src/a.js"]}'
+autocode run workflow.js --provider codex --args '{"files":["src/a.js"]}'
 ```
 
 Use `--provider claude` when Claude should execute calls by default. Set a provider, model, and effort for a specific call with `agent(prompt, { provider: 'claude', model: 'haiku', effort: 'low' })`. Both adapters use native JavaScript SDKs. Progress streams to stderr; stdout contains JSON with `result`, `failures`, `logs`, `agentCount`, `outputTokens`, `runId`, and `runDir`. Pass `--run-dir <dir>` to choose a journal location. Resume the same script and directory with `--resume <runId>`; completed calls with unchanged inputs replay from the journal. Use `--budget <tokens>` for a soft output-token target. Delegated agents default to read-only tools; set `--sandbox workspace-write` when the user authorized edits.
@@ -38,4 +38,4 @@ Read the returned `result` and `failures` before answering the user. The task is
 
 The Codex SDK starts another Codex process. If the host tool sandbox reports `Read-only file system` while that process initializes, rerun the same reviewed script from a permitted shell that can write Codex state; keep delegated calls read-only unless edits were authorized. If no such execution is available, report the failed run.
 
-The runner needs Node.js 20+ and authentication for the selected provider. An npm installation includes dependencies and the `autocode` command. For a source checkout, install dependencies with `npm ci --prefix "$HOME/.codex/skills/autocode"`, then run `npm test --prefix "$HOME/.codex/skills/autocode"`. A passing test run checks the local runner and templates; the task's workflow result still needs inspection.
+The runner needs Node.js 20+, the globally installed `autocode-skill` npm package, and authentication for the selected provider. `npm install -g autocode-skill` provides its dependencies and the `autocode` command. A passing `npm test` in a source checkout checks the local runner and templates; the task's workflow result still needs inspection.

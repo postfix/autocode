@@ -14,7 +14,7 @@ $autocode Review the changes in this repository with parallel agents, independen
 
 In Claude, ask it to use the `autocode` skill with the same request. The skill writes a workflow for the task, runs it through the local SDK adapters, and reports the results and failures. Ask for a specific provider, model, or effort level when you want to control delegated calls; the authoring agent can use higher effort than the agents that execute the workflow.
 
-The optional [hook plugin](INSTALL.md#enable-session-reminders) adds a one-turn `ultracode` keyword trigger and `autocode on` / `autocode off` session reminders in Codex and Claude. It requires a separate plugin installation and host trust step.
+The [host plugin](INSTALL.md#install-the-skill-and-session-hooks) installs the skill plus a one-turn `ultracode` keyword trigger and `autocode on` / `autocode off` session reminders in Codex and Claude. The npm package installs the runner command and SDK dependencies; Codex requires hook trust for the plugin.
 
 ## Run a workflow directly
 
