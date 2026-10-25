@@ -1,6 +1,6 @@
 {
   "name": "autocode-skill",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "JavaScript workflow skill for Codex and Claude agents",
   "license": "Apache-2.0",
   "repository": {
@@ -19,6 +19,7 @@
     "USAGE.md",
     "agents/openai.yaml",
     "references/authoring.md",
+    "references/quality-patterns.md",
     "assets/templates/*.js",
     "scripts/autocode.mjs",
     "scripts/claude-adapter.mjs",

@@ -4,7 +4,7 @@ Autocode needs Node.js 20 or newer and authentication for whichever provider you
 
 ## Install the npm package
 
-After the stable `v0.1.0` npm release, install the package globally, then link its skill files into both hosts:
+Install the package globally, then link its skill files into both hosts:
 
 ```bash
 npm install -g autocode-skill
@@ -18,10 +18,10 @@ The npm install provides the `autocode` command and both native SDK dependencies
 
 ## Install from a checkout
 
-The GitHub repository currently requires access and an authorized SSH key. The pinned SDK dependencies are in `package-lock.json`.
+The GitHub repository is public. The pinned SDK dependencies are in `package-lock.json`.
 
 ```bash
-git clone git@github.com:postfix/autocode.git ~/.local/share/autocode
+git clone https://github.com/postfix/autocode.git ~/.local/share/autocode
 cd ~/.local/share/autocode
 npm ci
 npm test

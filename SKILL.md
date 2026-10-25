@@ -5,9 +5,9 @@ description: Use Autocode when the user asks for a JavaScript multi-agent workfl
 
 # Autocode
 
-Author a bounded JavaScript workflow, then run it with Codex, Claude, or both. Use a workflow when the user requests multi-agent orchestration or invokes this skill; agent calls can spend substantial tokens. Plan the task list and expected result before launching. The host agent that writes the workflow can use high effort for design; each `agent()` call can specify a smaller model and lower effort for execution.
+When the user invokes Autocode or explicitly asks for a workflow or multiple agents, author and run a JavaScript workflow for each substantive part of that task. A trivial edit or conversational answer can be handled directly. Agent calls can spend substantial tokens: honor the user's requested scale and budget. Use high effort to design the workflow when the problem needs it; each `agent()` call can use a smaller model, lower effort, or another provider for execution.
 
-Read [authoring.md](references/authoring.md) when writing a script. Start from [review-and-verify.js](assets/templates/review-and-verify.js) for independent reviews followed by verification, [parallel-scout.js](assets/templates/parallel-scout.js) for a one-stage sweep, or [mixed-provider.js](assets/templates/mixed-provider.js) to choose provider and model per task. Save the workflow in the project where it will run.
+Before writing a script, read [authoring.md](references/authoring.md) for the API, scheduling, limits, and resume rules, then [quality-patterns.md](references/quality-patterns.md) for the recovered Ultracode decomposition and verification patterns. Scout the task inline to find the work list; use one bounded workflow per phase when later phases depend on interpreting earlier results. Start from [review-and-verify.js](assets/templates/review-and-verify.js), [exhaustive-review.js](assets/templates/exhaustive-review.js), [parallel-scout.js](assets/templates/parallel-scout.js), or [mixed-provider.js](assets/templates/mixed-provider.js). Save the workflow in the project where it will run.
 
 From that project directory, run the script with:
 

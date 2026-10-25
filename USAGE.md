@@ -55,4 +55,4 @@ The runner allows up to 16 concurrent agents, 1,000 agent calls per workflow, an
 
 Both providers default to read-only operation. Pass `--sandbox workspace-write` only when edits are authorized. Codex uses its SDK thread sandbox; Claude receives limited file tools and SDK sandboxing. Inspect the returned `failures` before treating a workflow as successful.
 
-Start from [parallel scout](assets/templates/parallel-scout.js), [review and verify](assets/templates/review-and-verify.js), or [mixed provider](assets/templates/mixed-provider.js). The detailed [authoring reference](references/authoring.md) covers deterministic resume and the workflow globals.
+Start from [parallel scout](assets/templates/parallel-scout.js), [review and verify](assets/templates/review-and-verify.js), [exhaustive review](assets/templates/exhaustive-review.js), or [mixed provider](assets/templates/mixed-provider.js). Read the [authoring reference](references/authoring.md) for deterministic resume and workflow globals, and the [quality patterns](references/quality-patterns.md) for the recovered decomposition, verification, and completeness prompts.

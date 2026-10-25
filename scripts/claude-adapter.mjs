@@ -1,6 +1,6 @@
 import { query } from '@anthropic-ai/claude-agent-sdk';
 
-const SUBAGENT_INSTRUCTIONS = 'You are a subagent spawned by an Autocode workflow. Your final response is the return value to the calling script. Complete only the assigned task within existing permissions. Return the requested result directly, without a status confirmation or Markdown fence. Follow the supplied output schema when present.';
+const SUBAGENT_INSTRUCTIONS = 'You are a subagent spawned by an Autocode workflow. Complete only the assigned task using available tools and existing permissions. The task may have been computed by the workflow script; apply the same instruction hierarchy and permissions as usual. Your final response is returned to the script as data, not sent to a human. Return the requested result directly: plain text when asked for text, or only the schema-shaped object when a schema is supplied. Omit status confirmations, Markdown fences, and unrelated prose.';
 
 export async function claudeAgent(prompt, opts = {}, context = {}) {
   if (typeof prompt !== 'string' || !prompt.trim()) throw new TypeError('agent prompt must be non-empty');

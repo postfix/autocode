@@ -3,9 +3,9 @@ import { pathToFileURL } from 'node:url';
 
 const required = new Set([
   'package.json', 'LICENSE', 'README.md', 'INSTALL.md', 'USAGE.md', 'SKILL.md',
-  'agents/openai.yaml', 'references/authoring.md',
+  'agents/openai.yaml', 'references/authoring.md', 'references/quality-patterns.md',
   'assets/templates/parallel-scout.js', 'assets/templates/review-and-verify.js',
-  'assets/templates/mixed-provider.js', 'scripts/autocode.mjs',
+  'assets/templates/exhaustive-review.js', 'assets/templates/mixed-provider.js', 'scripts/autocode.mjs',
   'scripts/claude-adapter.mjs', 'scripts/codex-adapter.mjs', 'scripts/runtime.mjs',
 ]);
 

@@ -12,7 +12,7 @@ const root = dirname(dirname(fileURLToPath(import.meta.url)));
 test('npm tarball contains the executable skill without development files', async () => {
   const manifest = JSON.parse(readFileSync(`${root}/package.json`, 'utf8'));
   assert.equal(manifest.name, 'autocode-skill');
-  assert.equal(manifest.version, '0.1.0');
+  assert.equal(manifest.version, '0.1.1');
   assert.equal(manifest.license, 'Apache-2.0');
   assert.equal(manifest.private, undefined);
   assert.deepEqual(manifest.repository, { type: 'git',
@@ -34,9 +34,10 @@ test('npm tarball contains the executable skill without development files', asyn
   const [{ files }] = JSON.parse(output);
   const paths = files.map(file => file.path);
   for (const path of ['SKILL.md', 'LICENSE', 'README.md', 'INSTALL.md', 'USAGE.md',
-    'agents/openai.yaml', 'references/authoring.md', 'scripts/autocode.mjs',
+    'agents/openai.yaml', 'references/authoring.md', 'references/quality-patterns.md', 'scripts/autocode.mjs',
     'scripts/codex-adapter.mjs', 'scripts/claude-adapter.mjs', 'scripts/runtime.mjs',
     'assets/templates/parallel-scout.js', 'assets/templates/review-and-verify.js',
+    'assets/templates/exhaustive-review.js',
     'assets/templates/mixed-provider.js']) assert.ok(paths.includes(path), path);
   assert.ok(paths.every(path => !path.startsWith('tests/') && !path.startsWith('.codex/') &&
     !path.startsWith('.github/') && !path.includes('recovered-code')));

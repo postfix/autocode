@@ -1,5 +1,7 @@
 # Autocode workflow authoring
 
+Read [quality-patterns.md](quality-patterns.md) before designing stages. It carries the recovered Ultracode guidance on pipelines, barriers, independent verification, completeness, and bounded discovery. Choose the work list and the expected result before spawning agents. When a later phase needs the host agent to interpret earlier evidence, run separate workflows and inspect each result before writing the next.
+
 Begin each `.js` script with literal metadata:
 
 ```js
@@ -10,6 +12,8 @@ return results;
 ```
 
 The script body is an async function. It receives `args`, `agent`, `parallel`, `pipeline`, `workflow`, `phase`, `log`, and `budget`. Omitted `args` is `undefined`; a supplied JSON `null` remains `null`. Return a JSON-serializable result. The runner writes `run.json` and `journal.jsonl` inside the run directory. The earlier `/* autocode {"name":"...","description":"..."} */` header still works. Use trusted scripts: Node's VM is a convenience for workflow globals, not a security boundary.
+
+`meta` must be a literal object with a nonempty `name` and one-line `description`. Add `phases` when you want the user to see the planned stages; use those exact titles in `phase()` and agent `phase` options. Save the script, run it from the project directory, and inspect `result` and `failures` before reporting success.
 
 ## Calls
 

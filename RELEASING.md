@@ -49,11 +49,11 @@ npm test
 npm pack --dry-run --json
 ```
 
-Create and push an annotated tag for that exact version (for example, `v0.1.0`):
+Create and push an annotated tag for that exact version (for example, `v0.1.1`):
 
 ```bash
-git tag -a v0.1.0 -m "Autocode v0.1.0"
-git push origin v0.1.0
+git tag -a v0.1.1 -m "Autocode v0.1.1"
+git push origin v0.1.1
 ```
 
 The workflow publishes to npm before creating the GitHub Release. The release command uses `--verify-tag`, so it cannot create a tag on a different commit. If npm publishes but GitHub Release creation fails, fix the GitHub step and create the release for the existing tag and tarball; do not republish the same npm version.

@@ -15,8 +15,9 @@ test('skill includes usable instructions and templates', async () => {
   assert.match(skill, /scripts\/autocode\.mjs" run/);
   for (const file of [
     'references/authoring.md',
+    'references/quality-patterns.md',
     'assets/templates/review-and-verify.js', 'assets/templates/parallel-scout.js',
-    'assets/templates/mixed-provider.js',
+    'assets/templates/exhaustive-review.js', 'assets/templates/mixed-provider.js',
   ]) assert.ok((await stat(join(root, file))).size > 0, file);
 });
 
@@ -28,11 +29,58 @@ test('bundled review template runs both review and verification stages', async (
     const output = await runWorkflow({ script, args: { topics: ['src/a.js'] }, runDir,
       agent: async (prompt, opts) => {
         prompts.push(prompt);
-        return { result: opts.schema ? { findings: ['possible bug'] } : 'confirmed', outputTokens: 1 };
+        return { result: prompt.startsWith('Review') ? { findings: ['possible bug'] } :
+          { real: true, reason: 'reproduced' }, outputTokens: 1 };
       } });
-    assert.deepEqual(output.result, [{ finding: 'possible bug', verdict: 'confirmed' }]);
+    assert.deepEqual(output.result, [{ finding: 'possible bug', verdict: { real: true, reason: 'reproduced' } }]);
     assert.equal(prompts.length, 2);
     assert.deepEqual(output.failures, []);
+  } finally { await rm(runDir, { recursive: true, force: true }); }
+});
+
+test('review template drops findings the verifier refutes', async () => {
+  const runDir = await mkdtemp(join(tmpdir(), 'autocode-template-'));
+  try {
+    const script = await readFile(join(root, 'assets/templates/review-and-verify.js'), 'utf8');
+    const output = await runWorkflow({ script, args: { topics: ['src/a.js'] }, runDir,
+      agent: async prompt => ({ result: prompt.startsWith('Review') ?
+        { findings: ['false alarm'] } : { real: false, reason: 'no repro' }, outputTokens: 1 }) });
+    assert.deepEqual(output.result, []);
+  } finally { await rm(runDir, { recursive: true, force: true }); }
+});
+
+test('exhaustive review deduplicates, votes, and stops after dry rounds', async () => {
+  const runDir = await mkdtemp(join(tmpdir(), 'autocode-template-'));
+  try {
+    const script = await readFile(join(root, 'assets/templates/exhaustive-review.js'), 'utf8');
+    const seen = [];
+    const output = await runWorkflow({ script, args: { topics: ['src/a.js'], maxRounds: 4 }, runDir,
+      agent: async prompt => {
+        seen.push(prompt);
+        if (prompt.startsWith('Round')) return { result: { findings: ['one issue'] }, outputTokens: 1 };
+        if (prompt.startsWith('Try')) return { result: { real: true, reason: 'reproduced' }, outputTokens: 1 };
+        return { result: 'No gaps found', outputTokens: 1 };
+      } });
+    assert.deepEqual(output.result.confirmed, ['one issue']);
+    assert.equal(output.result.rounds, 3);
+    assert.equal(output.result.stoppedAfterDryRounds, true);
+    assert.equal(seen.filter(prompt => prompt.startsWith('Try')).length, 3);
+    assert.deepEqual(output.failures, []);
+  } finally { await rm(runDir, { recursive: true, force: true }); }
+});
+
+test('exhaustive review does not confirm a finding without two positive votes', async () => {
+  const runDir = await mkdtemp(join(tmpdir(), 'autocode-template-'));
+  try {
+    const script = await readFile(join(root, 'assets/templates/exhaustive-review.js'), 'utf8');
+    const output = await runWorkflow({ script, args: { topics: ['src/a.js'], maxRounds: 1 }, runDir,
+      agent: async prompt => ({ result: prompt.startsWith('Round') ? { findings: ['false alarm'] } :
+        prompt.includes('correctness') ? { real: true, reason: 'possible' } :
+          prompt.startsWith('Try') ? { real: false, reason: 'refuted' } : 'Check incomplete',
+      outputTokens: 1 }) });
+    assert.deepEqual(output.result.confirmed, []);
+    assert.equal(output.result.stoppedAfterDryRounds, false);
+    assert.match(output.logs.at(-1).message, /Stopped at maxRounds/);
   } finally { await rm(runDir, { recursive: true, force: true }); }
 });
 
