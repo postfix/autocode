@@ -12,6 +12,7 @@ After loading the recovered `Hs` and `zs` prompt variants and packaging the comp
 | Unit and property suite | 11 test files passed with `npm test`; adapter tests assert the actual text and structured prompts sent to both SDKs, and a prose test pins the hashes of all eight recovered assets. |
 | Prompt module coverage | `scripts/subagent-prompt.mjs`: 100% lines, branches, and functions. Whole suite: 93.12% lines, 78.34% branches, 89.66% functions. This is not 100% repository coverage. |
 | npm candidate file check | `npm pack --dry-run --json` and `verify-release.mjs v0.1.1` passed. |
+| Installed candidate runner | The final local 0.1.1 tarball was installed into `~/.local`; `autocode run` returned `INSTALLED_OK` with no failures. The installed skill and `subagent-prompts.json` match the checkout byte for byte. |
 | Live Codex skill authoring plus three structured agents | Passed: author saved `review.js`; two reviewers and a skeptical verifier confirmed `add(a,b)` returns `a-b`. Run `wf_3e326238-20d7-4b6c-9ac7-636e361bd9f6` in `/home/john/rev/package/.scratch/autocode-evals/run-tGLIYK`. |
 | Live Codex text agent | Passed: returned exactly `TEXT_PROMPT_OK` with no failures. Run `wf_a4329c14-097b-4a57-8208-0d3a467d9d98` in `/home/john/rev/package/.scratch/autocode-evals/text-prompt-20261025`. |
 | Sandbox-only first attempt | Failed with `Read-only file system` during Codex SDK initialization; the authorized retry outside that sandbox passed. |
