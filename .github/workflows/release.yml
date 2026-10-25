@@ -40,6 +40,9 @@ jobs:
           npm install -g --prefix "$RUNNER_TEMP/autocode-smoke" "./${{ steps.pack.outputs.filename }}"
           printf '%s\n' "export const meta = { name: 'smoke', description: 'Check packaged CLI' };" "return 'PACKAGED_OK';" > "$RUNNER_TEMP/smoke.js"
           "$RUNNER_TEMP/autocode-smoke/bin/autocode" run "$RUNNER_TEMP/smoke.js" --run-dir "$RUNNER_TEMP/autocode-smoke-run" | grep '"result":"PACKAGED_OK"'
+      - name: Preview npm publish
+        if: github.event_name == 'workflow_dispatch'
+        run: npm publish "./${{ steps.pack.outputs.filename }}" --dry-run --access public
       - name: Publish to npm
         if: github.event_name == 'push'
         run: npm publish "./${{ steps.pack.outputs.filename }}" --access public
