@@ -7,7 +7,7 @@ To test the build, package verification, and installed CLI on GitHub without pub
 ## Before the first release
 
 1. Confirm the npm package name `autocode-skill` is available and that the publishing account can claim it. This checkout has no npm login configured; no package has been published from it.
-2. Set the repository's `NPM_TOKEN` Actions secret to an npm publish token that can create the public package. The first publish needs this token because npm trusted publishing can only be configured for an existing package.
+2. Set the repository's `NPM_TOKEN` Actions secret to a [granular npm token](https://docs.npmjs.com/about-access-tokens/) with read/write direct-publish access and bypass 2FA enabled. Its account must be allowed to create the public package. The first publish needs this token because npm trusted publishing can only be configured for an existing package.
 3. Review `npm pack --dry-run --json`. The tarball is public even while the GitHub repository is private. The `files` allowlist keeps tests, workflows, journals, and recovered artifacts out of the package.
 
 After the first publish, configure an [npm trusted publisher](https://docs.npmjs.com/trusted-publishers/) for GitHub owner `postfix`, repository `autocode`, workflow filename `release.yml`, with direct `npm publish` allowed. The workflow already grants `id-token: write`. Once a trusted publish succeeds, remove the `NPM_TOKEN` secret. npm does not generate provenance for packages published from private repositories.
