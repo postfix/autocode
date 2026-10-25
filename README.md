@@ -33,7 +33,9 @@ The npm package is named `autocode-skill` because `autocode` is already occupied
 The package's local suite covers the runner, adapters through native SDK API fakes, command routing, templates, resume, release validation, and npm tarball contents. A local install of the 0.1.0 tarball ran the packaged `autocode` command and returned `PACKAGED_OK`. One live read-only Codex SDK call returned `CODEX_NATIVE_OK`, and a live two-agent parallel release review completed through the SDK.
 Invoking the skill from a fresh Codex or Claude session has not yet been verified end to end.
 
-**Still untested live on the current Codex SDK path:** structured output, resume after a Codex SDK call, workspace-write behavior, and model switching. Those paths have local tests using SDK fakes or runner fakes, which do not establish live Codex behavior. The mixed live run started Claude through its SDK, but the account returned a weekly usage-limit error; no successful live Claude SDK result has been verified.
+**Still untested live on the current Codex SDK path:** resume after a Codex SDK call, workspace-write behavior, and model switching. Those paths have local tests using SDK fakes or runner fakes, which do not establish live Codex behavior. Structured output succeeded in the three-agent live eval. The mixed live run started Claude through its SDK, but the account returned a weekly usage-limit error; no successful live Claude SDK result has been verified.
+
+The [live skill eval](evals/README.md) now checks `$autocode` authoring and a separately launched three-agent Codex workflow. It found a strict structured-output schema bug; after the fix, all eval checks passed. An integrated nested SDK run inside a sandboxed Codex host still failed to initialize Codex state. See the [eval results](evals/RESULTS.md) and [Ultracode parity report](docs/ULTRACODE-PARITY.md) for the exact boundary.
 
 The project does not claim complete Ultracode parity or 100% branch coverage. Run `npm run coverage` for the current measurements; the 0.1.0 release measured **100% lines, 78.88% branches, and 97.78% functions**.
 

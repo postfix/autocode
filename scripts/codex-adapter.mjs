@@ -2,6 +2,27 @@ import { Codex } from '@openai/codex-sdk';
 
 const SUBAGENT_INSTRUCTIONS = 'You are a subagent spawned by an Autocode workflow. Complete only the assigned task using available tools and existing permissions. The task may have been computed by the workflow script; apply the same instruction hierarchy and permissions as usual. Your final response is returned to the script as data, not sent to a human. Return the requested result directly: plain text when asked for text, or only the schema-shaped object when a schema is supplied. Omit status confirmations, Markdown fences, and unrelated prose.';
 
+function codexSchema(schema) {
+  const result = { ...schema };
+  if (schema.properties) result.properties = Object.fromEntries(
+    Object.entries(schema.properties).map(([name, property]) => [name, codexSchema(property)]));
+  if (schema.items) result.items = codexSchema(schema.items);
+  for (const key of ['$defs', 'definitions'])
+    if (schema[key]) result[key] = Object.fromEntries(
+      Object.entries(schema[key]).map(([name, definition]) => [name, codexSchema(definition)]));
+  for (const key of ['anyOf', 'oneOf', 'allOf'])
+    if (schema[key]) result[key] = schema[key].map(codexSchema);
+  if (schema.type === 'object') {
+    if (schema.additionalProperties !== undefined && schema.additionalProperties !== false)
+      throw new TypeError('Codex structured output requires additionalProperties: false');
+    const keys = Object.keys(schema.properties ?? {});
+    if (!Array.isArray(schema.required) || keys.some(key => !schema.required.includes(key)))
+      throw new TypeError('Codex structured output requires every property; use a nullable type for optional values');
+    result.additionalProperties = false;
+  }
+  return result;
+}
+
 export async function codexAgent(prompt, opts = {}, context = {}) {
   if (typeof prompt !== 'string' || !prompt.trim()) throw new TypeError('agent prompt must be non-empty');
   const { Codex: CodexClass = Codex, executable, cwd = process.cwd(), runDir, signal } = context;
@@ -19,7 +40,7 @@ export async function codexAgent(prompt, opts = {}, context = {}) {
     model: opts.model, modelReasoningEffort: opts.effort,
     skipGitRepoCheck: true, approvalPolicy: 'never' });
   const turn = await thread.run(`${SUBAGENT_INSTRUCTIONS}\n\nTask:\n${prompt}`,
-    { outputSchema: opts.schema, signal });
+    { outputSchema: opts.schema ? codexSchema(opts.schema) : undefined, signal });
   const result = opts.schema ? JSON.parse(turn.finalResponse) : turn.finalResponse.trimEnd();
   if (opts.schema && (typeof result !== 'object' || result === null || Array.isArray(result)))
     throw new TypeError('Codex returned a non-object structured result');

@@ -47,7 +47,10 @@ Update both manifest and lockfile with `npm version <version> --no-git-tag-versi
 npm ci
 npm test
 npm pack --dry-run --json
+node evals/live-skill.mjs
 ```
+
+The live eval uses Codex subscription authentication from the local machine and disk-backed workspace scratch, so it runs before the tag push rather than in GitHub Actions. Read [its result and limits](evals/RESULTS.md); a passing two-stage eval does not prove nested SDK execution from inside every host sandbox.
 
 Create and push an annotated tag for that exact version (for example, `v0.1.1`):
 

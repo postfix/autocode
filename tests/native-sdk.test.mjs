@@ -22,8 +22,26 @@ test('Codex adapter uses SDK thread options and turn result', async () => {
   assert.equal(seen.client.codexPathOverride, '/fake/codex');
   assert.deepEqual(seen.thread, { workingDirectory: '/tmp', sandboxMode: 'read-only',
     model: 'small', modelReasoningEffort: 'low', skipGitRepoCheck: true, approvalPolicy: 'never' });
-  assert.deepEqual(seen.turn.outputSchema, schema);
+  assert.deepEqual(seen.turn.outputSchema, { ...schema, additionalProperties: false });
+  assert.equal(schema.additionalProperties, undefined);
   assert.match(seen.prompt, /Answer$/);
+});
+
+test('Codex adapter strictens nested object schemas and rejects optional fields', async () => {
+  let seen;
+  class FakeCodex {
+    startThread() { return { run: async (_prompt, options) => {
+      seen = options.outputSchema;
+      return { finalResponse: '{"detail":{"answer":42}}', usage: { output_tokens: 1 } };
+    } }; }
+  }
+  const schema = { type: 'object', properties: { detail: { type: 'object',
+    properties: { answer: { type: 'integer' } }, required: ['answer'] } }, required: ['detail'] };
+  await codexAgent('Answer', { schema }, { Codex: FakeCodex, cwd: '/tmp', runDir: '/tmp' });
+  assert.equal(seen.additionalProperties, false);
+  assert.equal(seen.properties.detail.additionalProperties, false);
+  await assert.rejects(codexAgent('Answer', { schema: { ...schema, required: [] } },
+    { Codex: FakeCodex, cwd: '/tmp', runDir: '/tmp' }), /requires every property/);
 });
 
 test('Claude adapter consumes SDK query result and maps permissions', async () => {
