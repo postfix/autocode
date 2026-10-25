@@ -1,0 +1,4 @@
+interface:
+  display_name: "Autocode"
+  short_description: "Run JavaScript workflows with Codex and Claude agents"
+  default_prompt: "Use $autocode to orchestrate this task with a JavaScript workflow."
