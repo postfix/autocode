@@ -28,7 +28,14 @@ npm publish "$BOOTSTRAP_DIR/autocode-skill-0.1.0-rc.0.tgz" --tag next --access p
 npm view autocode-skill@0.1.0-rc.0 version --registry=https://registry.npmjs.org/
 ```
 
-On the new `autocode-skill` package's npm settings page, add a [Trusted Publisher](https://docs.npmjs.com/trusted-publishers/) with GitHub owner `postfix`, repository `autocode`, workflow filename `release.yml`, and **Allow npm publish** enabled. Set no environment name unless the workflow also uses that exact GitHub environment. The workflow already grants `id-token: write` on a GitHub-hosted runner. Complete the first trusted publish within two days of configuring the publisher. After it succeeds, set npm publishing access to **Require two-factor authentication and disallow tokens**.
+After the prerelease exists, add a [Trusted Publisher](https://docs.npmjs.com/trusted-publishers/) from the same MFA-authenticated npm CLI session:
+
+```bash
+npm trust github autocode-skill --file release.yml --repo postfix/autocode --allow-publish --registry=https://registry.npmjs.org/
+npm trust list autocode-skill --registry=https://registry.npmjs.org/
+```
+
+This requires npm CLI 11.15.0 or newer and may prompt for MFA. In npm's website, the equivalent settings are GitHub owner `postfix`, repository `autocode`, workflow filename `release.yml`, and **Allow npm publish** enabled. Set no environment name unless the workflow also uses that exact GitHub environment. The workflow already grants `id-token: write` on a GitHub-hosted runner. Complete the first trusted publish within two days of configuring the publisher. After it succeeds, set npm publishing access to **Require two-factor authentication and disallow tokens**.
 
 The tarball is public even while the GitHub repository is private. The `files` allowlist keeps tests, workflows, journals, and recovered artifacts out of the package. npm does not generate provenance for packages published from private repositories.
 
