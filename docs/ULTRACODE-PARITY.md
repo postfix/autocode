@@ -13,8 +13,8 @@ This compares the recovered Ultracode instruction surfaces from Claude Code 2.1.
 | Text subagent prompts (`Hs`, `Js`) | `references/source-prompts/subagent-prompts.json`, `scripts/subagent-prompt.mjs` | `Hs` is loaded for actual text calls, substituting only the `SendUserMessage` line. `Js` is preserved but inactive because `agentType` is unsupported. |
 | Structured subagent prompts (`zs`, `Ks`) | Same prompt source and SDK schema options | `zs` is loaded for schema calls; five `StructuredOutput` phrases are translated to SDK structured-result language. `Ks` is preserved but inactive. |
 | Shared computed-task note (`jn`) | Included verbatim in active `Hs` and `zs` | A separate permission qualification is appended; computed task text still does not grant new authority. |
-| Keyword reminder (`F0r`) | Optional Codex/Claude plugin `UserPromptSubmit` hook | Scans qualifying human prompts for `ultracode` and emits a one-turn reminder. Hook installation and host delivery remain unverified. |
-| Enter, sparse, exit reminders (`$0r`) | Optional plugin `SessionStart` and `UserPromptSubmit` hooks | Per-session mode and ten-turn sparse reminders are implemented and locally tested. Host delivery and exact source state-machine parity remain unverified. |
+| Keyword reminder (`F0r`) | Codex/Claude plugin `UserPromptSubmit` hook | Scans qualifying human prompts for `ultracode` and emits a one-turn reminder. The installed Codex transcript contains that injected reminder; Claude keyword delivery remains unverified. |
+| Enter, sparse, exit reminders (`$0r`) | Plugin `SessionStart` and `UserPromptSubmit` hooks | Installed Codex and Claude hosts wrote `on:true` and `on:false` session state on entry/exit. Ten-turn sparse delivery and exact source FSM parity remain unverified in installed hosts. |
 | Recovered worked examples and quality prompts | `references/quality-patterns.md` and four executable templates | The review, skeptical verification, sweep, judge panel, loop, and completeness decisions are represented. Examples use Autocode's API and are not text-identical to Claude's examples. |
 
 The candidate package preserves all identified prompt/prose assets and actively loads the original default authoring reference and the text/structured subagent variants. Autocode's instructions add cross-provider selection and explicit inspection of the runner's `failures` output.
@@ -33,10 +33,10 @@ The candidate package preserves all identified prompt/prose assets and actively 
 | Worktree isolation and custom agent types | Missing | Both adapters reject `isolation: 'worktree'` and `agentType` explicitly. |
 | Session-connected MCP tools | Partial/unknown | Autocode does not explicitly forward the host's MCP tool pool; Claude SDK calls use a limited file-tool list. |
 | Background Workflow UI | Missing | The CLI streams progress and returns a result without Claude's notification or `/workflows` UI. |
-| Session activation FSM | Partial | Optional plugin hooks implement keyword/full/sparse/exit reminders; local tests pass, but installed-host behavior remains unverified. |
+| Session activation FSM | Partial | Plugin hooks implement keyword/full/sparse/exit reminders; entry/exit state transitions passed in installed Codex and Claude hosts, and Codex keyword injection appeared in the transcript. Ten-turn sparse host delivery remains unverified. |
 
 ## Validation and remaining risk
 
 The local suite tests the runner, SDK adapter contracts, release package, templates, and property-based invariants. The live skill eval in `evals/live-skill.mjs` passed skill authoring and a separately launched three-agent Codex workflow that found and verified a seeded arithmetic bug. A fully integrated run from inside a sandboxed Codex host failed when nested Codex SDK processes could not initialize their state. The review workflow succeeded when launched directly through the CLI. See `evals/RESULTS.md`.
 
-Autocode therefore has substantial workflow and authoring-pattern coverage, but **does not have full Ultracode parity**. The custom-agent suffixes remain inactive, and the optional hook has not been verified inside installed hosts. The largest execution gap observed locally is nested SDK startup from a sandboxed host. No percentage parity or 100% behavioral coverage is claimed.
+Autocode therefore has substantial workflow and authoring-pattern coverage, but **does not have full Ultracode parity**. The custom-agent suffixes remain inactive; Claude keyword and ten-turn sparse hook delivery remain unverified. Claude subscription model access is disabled in this organization. The largest execution gap observed locally is nested SDK startup from a sandboxed host. No percentage parity or 100% behavioral coverage is claimed.

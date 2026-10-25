@@ -15,7 +15,10 @@ After loading the recovered `Hs` and `zs` prompt variants and packaging the comp
 | Live Codex skill authoring plus three structured agents | Passed: author saved `review.js`; two reviewers and a skeptical verifier confirmed `add(a,b)` returns `a-b`. Run `wf_3e326238-20d7-4b6c-9ac7-636e361bd9f6` in `/home/john/rev/package/.scratch/autocode-evals/run-tGLIYK`. |
 | Live Codex text agent | Passed: returned exactly `TEXT_PROMPT_OK` with no failures. Run `wf_a4329c14-097b-4a57-8208-0d3a467d9d98` in `/home/john/rev/package/.scratch/autocode-evals/text-prompt-20261025`. |
 | Sandbox-only first attempt | Failed with `Read-only file system` during Codex SDK initialization; the authorized retry outside that sandbox passed. |
-| Live Claude prompt path and installed hook delivery | Not yet verified. |
+| Installed Codex hook | Passed in read-only CLI threads: `autocode on` wrote `on:true`, a resumed `autocode off` wrote `on:false`, and a qualifying `ultracode` prompt injected the one-turn reminder into the session transcript. The two Autocode hooks were then trusted individually through Codex's hook review UI. A subsequent ordinary CLI thread, without any trust bypass, contained the full reminder and returned `TRUSTED_HOOK_OK`. |
+| Installed Claude hook | Passed at the hook layer: `autocode on` and a resumed `autocode off` changed the plugin's session state from true to false. Claude model calls failed before inference because this organization has disabled Claude subscription access for Claude Code. |
+| Live Claude subagent output | Unverified because Claude subscription model access is disabled for this organization. |
+| Ten-turn sparse reminder in an installed host | Unverified; the pure transition test passes. |
 
 The structured live run exercises `zs` through the Codex SDK; the text run exercises `Hs`. They demonstrate behavior for those two fixtures, not equivalence of every recovered sentence.
 
