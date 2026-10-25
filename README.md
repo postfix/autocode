@@ -1,12 +1,22 @@
 # Autocode
 
-Autocode runs JavaScript workflows that coordinate local Codex and Claude agents. A workflow can fan out tasks, run pipelines, call child workflows, report progress, enforce a soft output-token budget, and resume completed agent calls from its journal. The runner uses the native `@openai/codex-sdk` and `@anthropic-ai/claude-agent-sdk` packages.
+Autocode is a skill for Codex and Claude that writes and runs JavaScript workflows to coordinate agents. A workflow can fan out tasks, run pipelines, call child workflows, report progress, enforce a soft output-token budget, and resume completed agent calls from its journal. The runner uses the native `@openai/codex-sdk` and `@anthropic-ai/claude-agent-sdk` packages.
 
 The agent authoring a workflow can use a capable model and high effort. Each delegated `agent()` call can then choose a smaller model, lower effort, or a different provider.
 
 ## Quick start
 
-See [INSTALL.md](INSTALL.md) for prerequisites and skill setup. From a checkout with dependencies installed:
+Follow [INSTALL.md](INSTALL.md) to install the skill. Then ask Codex:
+
+```text
+$autocode Review the changes in this repository with parallel agents, independently verify each finding, and report the evidence.
+```
+
+In Claude, ask it to use the `autocode` skill with the same request. The skill writes a workflow for the task, runs it through the local SDK adapters, and reports the results and failures. Ask for a specific provider, model, or effort level when you want to control delegated calls; the authoring agent can use higher effort than the agents that execute the workflow.
+
+## Run a workflow directly
+
+To run a bundled template from a checkout with dependencies installed:
 
 ```bash
 node scripts/autocode.mjs run assets/templates/parallel-scout.js \
@@ -14,11 +24,12 @@ node scripts/autocode.mjs run assets/templates/parallel-scout.js \
   --args '{"questions":["Find likely bugs in src/","Check the README examples"]}'
 ```
 
-The command prints progress to stderr and a JSON result to stdout. [USAGE.md](USAGE.md) explains the workflow API, mixed-provider calls, resume, limits, and permission modes. The [mixed-provider template](assets/templates/mixed-provider.js) demonstrates provider, model, and effort selection per task.
+The command prints progress to stderr and a JSON result to stdout. [USAGE.md](USAGE.md) explains skill use, the workflow API, mixed-provider calls, resume, limits, and permission modes. The [mixed-provider template](assets/templates/mixed-provider.js) demonstrates provider, model, and effort selection per task.
 
 ## What has been tested
 
 The package has **43 named test cases across seven passing test files**, including three property tests with 140 generated cases. A clean `npm ci` install and the local suite passed. The tests cover the runner, adapters through native SDK API fakes, command routing, templates, and resume. One live read-only Codex SDK call returned `CODEX_NATIVE_OK`.
+Invoking the skill from a fresh Codex or Claude session has not yet been verified end to end.
 
 **Still untested live on the current Codex SDK path:** structured output, multiple concurrent Codex calls, resume after a Codex SDK call, workspace-write behavior, and model switching. Those paths have local tests using SDK fakes or runner fakes, which do not establish live Codex behavior. The mixed live run started Claude through its SDK, but the account returned a weekly usage-limit error; no successful live Claude SDK result has been verified.
 
