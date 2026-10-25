@@ -26,7 +26,7 @@ node scripts/autocode.mjs run assets/templates/parallel-scout.js \
 
 The command prints progress to stderr and a JSON result to stdout. [USAGE.md](USAGE.md) explains skill use, the workflow API, mixed-provider calls, resume, limits, and permission modes. The [mixed-provider template](assets/templates/mixed-provider.js) demonstrates provider, model, and effort selection per task.
 
-The npm package is named `autocode-skill` because `autocode` is already occupied on npm. The package installs an `autocode` command and includes the skill files; publishing is prepared by the [release workflow](RELEASING.md). No npm version or GitHub Release has been published from this checkout yet.
+The npm package is named `autocode-skill` because `autocode` is already occupied on npm. The package installs an `autocode` command and includes the skill files; [release instructions](RELEASING.md) cover the initial MFA bootstrap and subsequent GitHub Trusted Publishing.
 
 ## What has been tested
 

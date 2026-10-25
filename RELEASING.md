@@ -4,13 +4,33 @@ The `release.yml` workflow runs when a `v<version>` tag is pushed. It checks the
 
 To test the build, package verification, installed CLI, and npm publish preview on GitHub without publishing, run `gh workflow run release.yml --ref main`, then inspect the new run with `gh run list --workflow release.yml --limit 1` and `gh run watch <run-id>`.
 
-## Before the first release
+## First release: bootstrap with MFA, then trust GitHub
 
-1. Confirm the npm package name `autocode-skill` is available and that the publishing account can claim it. This checkout has no npm login configured; no package has been published from it.
-2. Sign in to npmjs.com with the publishing account. Under **Profile → Access Tokens → Generate New Token**, create a [granular token](https://docs.npmjs.com/creating-and-viewing-access-tokens/) with **Packages and scopes: Read and write (publish and stage) → All Packages**, **Bypass two-factor authentication** enabled, and a short expiration. The account must be allowed to create the public package. In your terminal, run `gh secret set NPM_TOKEN -R postfix/autocode`, paste the token at the prompt, then confirm the name appears with `gh secret list -R postfix/autocode`. The first publish needs this token because npm trusted publishing can only be configured for an existing package.
-3. Review `npm pack --dry-run --json`. The tarball is public even while the GitHub repository is private. The `files` allowlist keeps tests, workflows, journals, and recovered artifacts out of the package.
+npm [requires the package to exist](https://docs.npmjs.com/cli/v11/commands/npm-trust/) before you can configure Trusted Publishing. Publish a prerelease once from an interactive npm account with MFA; this does not use a bypass-2FA token. The prerelease uses the `next` dist-tag so the later `v0.1.0` workflow can publish the first `latest` version.
 
-After the first publish, configure an [npm trusted publisher](https://docs.npmjs.com/trusted-publishers/) for GitHub owner `postfix`, repository `autocode`, workflow filename `release.yml`, with direct `npm publish` allowed. The workflow already grants `id-token: write`. Once a trusted publish succeeds, remove the `NPM_TOKEN` secret. npm does not generate provenance for packages published from private repositories.
+From the checkout at the release commit, prepare an isolated prerelease tarball:
+
+```bash
+BOOTSTRAP_DIR="$(mktemp -d)"
+git archive HEAD | tar -x -C "$BOOTSTRAP_DIR"
+(
+  cd "$BOOTSTRAP_DIR"
+  npm version 0.1.0-rc.0 --no-git-tag-version
+  npm pack --pack-destination "$BOOTSTRAP_DIR"
+)
+```
+
+Review the tarball contents, then sign in and publish it from your own terminal. npm will require your account's interactive MFA:
+
+```bash
+npm login --registry=https://registry.npmjs.org/
+npm publish "$BOOTSTRAP_DIR/autocode-skill-0.1.0-rc.0.tgz" --tag next --access public --registry=https://registry.npmjs.org/
+npm view autocode-skill@0.1.0-rc.0 version --registry=https://registry.npmjs.org/
+```
+
+On the new `autocode-skill` package's npm settings page, add a [Trusted Publisher](https://docs.npmjs.com/trusted-publishers/) with GitHub owner `postfix`, repository `autocode`, workflow filename `release.yml`, and **Allow npm publish** enabled. Set no environment name unless the workflow also uses that exact GitHub environment. The workflow already grants `id-token: write` on a GitHub-hosted runner. Complete the first trusted publish within two days of configuring the publisher. After it succeeds, set npm publishing access to **Require two-factor authentication and disallow tokens**.
+
+The tarball is public even while the GitHub repository is private. The `files` allowlist keeps tests, workflows, journals, and recovered artifacts out of the package. npm does not generate provenance for packages published from private repositories.
 
 ## Make a release
 

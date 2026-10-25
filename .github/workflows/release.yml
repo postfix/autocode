@@ -46,8 +46,6 @@ jobs:
       - name: Publish to npm
         if: github.event_name == 'push'
         run: npm publish "./${{ steps.pack.outputs.filename }}" --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Create GitHub Release
         if: github.event_name == 'push'
         run: gh release create "$GITHUB_REF_NAME" "./${{ steps.pack.outputs.filename }}" --verify-tag --generate-notes

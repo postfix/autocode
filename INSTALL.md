@@ -4,7 +4,7 @@ Autocode needs Node.js 20 or newer and authentication for whichever provider you
 
 ## Install the npm package
 
-After the first npm release, install the package globally, then link its skill files into both hosts:
+After the stable `v0.1.0` npm release, install the package globally, then link its skill files into both hosts:
 
 ```bash
 npm install -g autocode-skill
