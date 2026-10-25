@@ -6,7 +6,7 @@ To test the build, package verification, installed CLI, and npm publish preview 
 
 ## First release: bootstrap with MFA, then trust GitHub
 
-npm [requires the package to exist](https://docs.npmjs.com/cli/v11/commands/npm-trust/) before you can configure Trusted Publishing. Publish a prerelease once from an interactive npm account with MFA; this does not use a bypass-2FA token. The prerelease uses the `next` dist-tag so the later `v0.1.0` workflow can publish the first `latest` version.
+npm [requires the package to exist](https://docs.npmjs.com/cli/v11/commands/npm-trust/) before you can configure Trusted Publishing. First, [enable 2FA](https://docs.npmjs.com/configuring-two-factor-authentication/) on the publishing npm account at **profile picture → Account → Two-Factor Authentication → Enable 2FA**; `npm profile get tfa --registry=https://registry.npmjs.org/` should then report it enabled. Publish a prerelease once from that interactive MFA account; this does not use a bypass-2FA token. The prerelease uses the `next` dist-tag so the later `v0.1.0` workflow can publish the first `latest` version.
 
 From the checkout at the release commit, prepare an isolated prerelease tarball:
 
