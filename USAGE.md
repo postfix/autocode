@@ -10,6 +10,8 @@ $autocode Investigate the failing tests in this project in parallel, verify the 
 
 In Claude, ask it to use the `autocode` skill with the same request. The skill authors the JavaScript workflow and runs it. You can ask for Codex, Claude, or both as delegated providers, and specify the model or effort for individual tasks. The authoring agent can use higher effort than the delegated agents. Review the reported `failures` alongside the result.
 
+If you installed the optional [session hooks](INSTALL.md#enable-session-reminders), a human request using the unquoted word `ultracode` triggers Autocode for that turn. `autocode on` enables standing mode for substantive tasks; `autocode off` exits it. The skill remains usable through explicit invocation without hooks.
+
 ## Write a workflow yourself
 
 Start with literal metadata. The remaining JavaScript runs as an async body with `args`, `agent`, `parallel`, `pipeline`, `workflow`, `phase`, `log`, and `budget` available:

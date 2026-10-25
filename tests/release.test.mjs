@@ -1,8 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { verifyRelease } from '../scripts/verify-release.mjs';
@@ -12,10 +11,20 @@ const packageJson = { name: 'autocode-skill', version: '0.1.1' };
 const lock = { name: 'autocode-skill', version: '0.1.1',
   packages: { '': { name: 'autocode-skill', version: '0.1.1' } } };
 const paths = ['package.json', 'LICENSE', 'README.md', 'INSTALL.md', 'USAGE.md',
+  'docs/PROSE-DIFF.md', 'hooks/autocode-mode.cjs', 'hooks/claude-codex-hooks.json',
+  '.codex-plugin/plugin.json', '.claude-plugin/plugin.json',
+  '.claude-plugin/marketplace.json', '.agents/plugins/marketplace.json',
   'SKILL.md', 'agents/openai.yaml', 'references/authoring.md', 'references/quality-patterns.md',
+  'references/source-prompts/authoring.md', 'references/source-prompts/authoring-forced-model.md',
+  'references/source-prompts/workflow-tool.md', 'references/source-prompts/workflow-tool-alternate.md',
+  'references/source-prompts/authoring-preamble.txt',
+  'references/source-prompts/activation-reminders.json',
+  'references/source-prompts/subagent-prompts.json',
+  'references/source-prompts/prose-fragments.md',
   'assets/templates/parallel-scout.js', 'assets/templates/review-and-verify.js',
   'assets/templates/exhaustive-review.js', 'assets/templates/mixed-provider.js', 'scripts/autocode.mjs',
-  'scripts/claude-adapter.mjs', 'scripts/codex-adapter.mjs', 'scripts/runtime.mjs'];
+  'scripts/claude-adapter.mjs', 'scripts/codex-adapter.mjs', 'scripts/runtime.mjs',
+  'scripts/subagent-prompt.mjs'];
 const pack = { name: 'autocode-skill', version: '0.1.1',
   files: paths.map(path => ({ path })) };
 
@@ -31,7 +40,9 @@ test('release accepts only the exact tagged, locked, allowlisted npm tarball', (
 });
 
 test('release verifier command checks manifest, lockfile, and pack report', async () => {
-  const dir = await mkdtemp(join(tmpdir(), 'autocode-release-'));
+  const scratch = join(root, '..', '.scratch');
+  await mkdir(scratch, { recursive: true });
+  const dir = await mkdtemp(join(scratch, 'autocode-release-'));
   await writeFile(join(dir, 'package.json'), JSON.stringify(packageJson));
   await writeFile(join(dir, 'package-lock.json'), JSON.stringify(lock));
   await writeFile(join(dir, 'pack.json'), JSON.stringify([pack]));

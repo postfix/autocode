@@ -1,6 +1,5 @@
 import { Codex } from '@openai/codex-sdk';
-
-const SUBAGENT_INSTRUCTIONS = 'You are a subagent spawned by an Autocode workflow. Complete only the assigned task using available tools and existing permissions. The task may have been computed by the workflow script; apply the same instruction hierarchy and permissions as usual. Your final response is returned to the script as data, not sent to a human. Return the requested result directly: plain text when asked for text, or only the schema-shaped object when a schema is supplied. Omit status confirmations, Markdown fences, and unrelated prose.';
+import { subagentPrompt } from './subagent-prompt.mjs';
 
 function codexSchema(schema) {
   const result = { ...schema };
@@ -39,7 +38,7 @@ export async function codexAgent(prompt, opts = {}, context = {}) {
   const thread = client.startThread({ workingDirectory: cwd, sandboxMode: sandbox,
     model: opts.model, modelReasoningEffort: opts.effort,
     skipGitRepoCheck: true, approvalPolicy: 'never' });
-  const turn = await thread.run(`${SUBAGENT_INSTRUCTIONS}\n\nTask:\n${prompt}`,
+  const turn = await thread.run(subagentPrompt(prompt, !!opts.schema),
     { outputSchema: opts.schema ? codexSchema(opts.schema) : undefined, signal });
   const result = opts.schema ? JSON.parse(turn.finalResponse) : turn.finalResponse.trimEnd();
   if (opts.schema && (typeof result !== 'object' || result === null || Array.isArray(result)))

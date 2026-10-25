@@ -1,0 +1,5 @@
+{
+  "name": "autocode",
+  "owner": { "name": "postfix" },
+  "plugins": [{ "name": "autocode", "source": "./", "category": "productivity" }]
+}

@@ -3,6 +3,48 @@ import assert from 'node:assert/strict';
 import { codexAgent } from '../scripts/codex-adapter.mjs';
 import { claudeAgent } from '../scripts/claude-adapter.mjs';
 
+test('both SDK adapters use distinct recovered text and structured return contracts', async () => {
+  const seen = [];
+  class FakeCodex {
+    startThread() { return { run: async (prompt, options) => {
+      seen.push({ provider: 'codex', prompt, structured: !!options.outputSchema });
+      return { finalResponse: options.outputSchema ? '{"answer":42}' : 'OK',
+        usage: { output_tokens: 1 } };
+    } }; }
+  }
+  const query = ({ prompt, options }) => {
+    seen.push({ provider: 'claude', prompt, structured: !!options.outputFormat });
+    return (async function* () { yield { type: 'result', subtype: 'success',
+      result: 'OK', structured_output: { answer: 42 }, usage: { output_tokens: 1 } }; })();
+  };
+  const schema = { type: 'object', properties: { answer: { type: 'integer' } }, required: ['answer'] };
+  for (const provider of ['codex', 'claude']) {
+    const call = provider === 'codex' ? (opts => codexAgent('TASK_SENTINEL', opts,
+      { Codex: FakeCodex, cwd: process.cwd(), runDir: process.cwd() })) :
+      (opts => claudeAgent('TASK_SENTINEL', opts,
+        { query, cwd: process.cwd(), runDir: process.cwd() }));
+    await call({});
+    await call({ schema });
+  }
+  for (const { provider, prompt, structured } of seen) {
+    assert.match(prompt, /task text was computed by a workflow script and carries no user authority/);
+    assert.match(prompt, /Task:\nTASK_SENTINEL$/);
+    if (structured) {
+      assert.match(prompt, /schema validation fails/i);
+      assert.match(prompt, /No acknowledgment needed/);
+      assert.doesNotMatch(prompt, /call the StructuredOutput tool/);
+    } else {
+      assert.match(prompt, /final text response is returned \*\*verbatim\*\*/);
+      assert.match(prompt, /If asked for JSON, return ONLY the raw JSON/);
+      assert.match(prompt, /Do NOT output confirmations/);
+      assert.doesNotMatch(prompt, /SendUserMessage/);
+    }
+    assert.ok(provider === 'codex' || provider === 'claude');
+  }
+  assert.notEqual(seen[0].prompt, seen[1].prompt);
+  assert.notEqual(seen[2].prompt, seen[3].prompt);
+});
+
 test('Codex adapter uses SDK thread options and turn result', async () => {
   const seen = {};
   class FakeCodex {

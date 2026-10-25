@@ -11,3 +11,13 @@ node evals/live-skill.mjs
 The eval writes its project and run journal under the workspace's `.scratch/autocode-evals` directory, keeping heavy scratch work off RAM-backed `/tmp`. Set `AUTOCODE_EVAL_SCRATCH` to another disk-backed directory if needed. A sandboxed Codex SDK thread invokes `$autocode` to author a workflow; then the harness runs that exact script through the Autocode CLI with three read-only Codex SDK agents. It checks the authored script, journal, result, and unchanged source file. The report prints the project path for inspection. No API key is required.
 
 This tests skill authoring and execution as separate stages. An integrated attempt to run the nested Codex SDK from inside the sandboxed host failed to initialize its Codex state, even with a dedicated writable state directory. That environment limitation remains a failing end-to-end case; the harness must not be reported as proof that default sandboxed invocation works. The eval also does not cover live Claude calls, model switching, or every template.
+
+After restoring the recovered subagent prompts, run a direct text-output check from a shell that permits the Codex SDK to initialize:
+
+```bash
+node scripts/autocode.mjs run assets/templates/parallel-scout.js --provider codex \
+  --args '{"questions":["Return exactly TEXT_PROMPT_OK."]}' \
+  --run-dir ../.scratch/autocode-evals/text-prompt
+```
+
+The `result[0].finding` should equal `TEXT_PROMPT_OK` and `failures` should be empty. The live skill eval's agents use structured schemas and exercise the restored `zs` prompt; this direct check exercises `Hs`.

@@ -1,0 +1,11 @@
+{
+  "name": "autocode",
+  "version": "0.1.1",
+  "description": "Ultracode-style session activation for the Autocode skill",
+  "hooks": "./hooks/claude-codex-hooks.json",
+  "interface": {
+    "displayName": "Autocode",
+    "shortDescription": "JavaScript multi-agent workflows",
+    "capabilities": ["Instructions", "Lifecycle hooks"]
+  }
+}

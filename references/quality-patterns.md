@@ -1,6 +1,6 @@
 # Workflow design and verification patterns
 
-This is the working Autocode adaptation of the recovered Ultracode authoring prompts. Use it when composing a workflow; the original prompts are preserved in the local recovery inventory, while this guide uses the APIs and limits of the packaged Codex and Claude runner.
+This is the working Autocode adaptation of the [recovered Ultracode authoring prompt](source-prompts/authoring.md). Read that full prompt before composing a workflow; use this guide and [authoring.md](authoring.md) for runnable examples and the packaged runner's API and limits.
 
 ## Choose the work shape
 
@@ -112,11 +112,11 @@ An `agent()` result is data returned to its workflow script. Ask for the exact o
 | Workflow tool descriptions | `SKILL.md` supplies the opt-in boundary and workflow invocation. |
 | Authoring preamble | `SKILL.md` requires reading both references before writing a workflow. |
 | Text and structured subagent prompts | Both SDK adapters apply the return contract above. |
-| Keyword reminder | A user's explicit `$autocode`, skill request, or multi-agent workflow request activates this skill for the current task. |
-| Full enter, sparse continued, and exit reminders | The skill's task-scoped invocation supplies the enter behavior. The packaged runner has no Claude session reminder hook or persistent on/off mode, so continued/exit reminders are not emitted. |
+| Keyword reminder | Explicit `$autocode` or workflow requests activate the skill. The optional plugin hook also scans qualifying human prompts for `ultracode` and injects a one-turn reminder. |
+| Full enter, sparse continued, and exit reminders | The optional Codex/Claude plugin hook persists `autocode on` mode per session, emits a full entry reminder, a sparse reminder after ten human turns or on resume, and an exit reminder for `autocode off`. Skill-only installs have no session hook. |
 | Shared subagent authority note (`jn`) | Workflow-computed tasks are followed within the usual instruction hierarchy and permissions. |
 | Default text prompt (`Hs`) and custom-agent text suffix (`Js`) | Both SDK adapters instruct direct data returns; `agentType` is explicitly unsupported. |
 | Structured-output prompt (`zs`) and custom-agent suffix (`Ks`) | Both adapters request root-object structured output through native SDK options; no `StructuredOutput` tool call is used. |
 | Worked examples and quality patterns | The sections above plus packaged runnable templates. |
 
-The investigation workspace records the original prompt surfaces at `autocode/references/source-prompts/INDEX.md`; that source inventory is not part of the npm package. Autocode changes the tool invocation, output-schema mechanism, session activation, budget semantics, and provider options to match its implementation. Those differences must not be represented as exact Claude Code behavior.
+The [recovered prompt assets](source-prompts/) are included in this candidate package. [The prose comparison](../docs/PROSE-DIFF.md) lists the original versus active instructions and the SDK-specific subagent substitutions. Autocode changes tool invocation, output-schema mechanism, session activation, budget semantics, and provider options to match its implementation. Those differences must not be represented as exact Claude Code behavior.

@@ -14,6 +14,8 @@ $autocode Review the changes in this repository with parallel agents, independen
 
 In Claude, ask it to use the `autocode` skill with the same request. The skill writes a workflow for the task, runs it through the local SDK adapters, and reports the results and failures. Ask for a specific provider, model, or effort level when you want to control delegated calls; the authoring agent can use higher effort than the agents that execute the workflow.
 
+The optional [hook plugin](INSTALL.md#enable-session-reminders) adds a one-turn `ultracode` keyword trigger and `autocode on` / `autocode off` session reminders in Codex and Claude. It requires a separate plugin installation and host trust step.
+
 ## Run a workflow directly
 
 To run a bundled template from a checkout with dependencies installed:
@@ -30,17 +32,16 @@ The npm package is named `autocode-skill` because `autocode` is already occupied
 
 ## What has been tested
 
-The package's local suite covers the runner, adapters through native SDK API fakes, command routing, templates, resume, release validation, and npm tarball contents. A local install of the 0.1.0 tarball ran the packaged `autocode` command and returned `PACKAGED_OK`. One live read-only Codex SDK call returned `CODEX_NATIVE_OK`, and a live two-agent parallel release review completed through the SDK.
-Invoking the skill from a fresh Codex or Claude session has not yet been verified end to end.
+The package's local suite covers the runner, adapters through native SDK API fakes, command routing, templates, resume, release validation, and npm tarball contents. A local install of the 0.1.0 tarball ran the packaged `autocode` command and returned `PACKAGED_OK`. One live read-only Codex SDK call returned `CODEX_NATIVE_OK`, and a live two-agent parallel release review completed through the SDK. A live Codex skill-authoring eval followed by a separate three-agent structured workflow passed, and a direct live text-agent check returned `TEXT_PROMPT_OK`. A fresh installed Claude skill invocation remains unverified.
 
 **Still untested live on the current Codex SDK path:** resume after a Codex SDK call, workspace-write behavior, and model switching. Those paths have local tests using SDK fakes or runner fakes, which do not establish live Codex behavior. Structured output succeeded in the three-agent live eval. The mixed live run started Claude through its SDK, but the account returned a weekly usage-limit error; no successful live Claude SDK result has been verified.
 
-The [live skill eval](evals/README.md) now checks `$autocode` authoring and a separately launched three-agent Codex workflow. It found a strict structured-output schema bug; after the fix, all eval checks passed. An integrated nested SDK run inside a sandboxed Codex host still failed to initialize Codex state. See the [eval results](evals/RESULTS.md) and [Ultracode parity report](docs/ULTRACODE-PARITY.md) for the exact boundary.
+The [live skill eval](evals/README.md) checks `$autocode` authoring and a separately launched three-agent Codex workflow. It found a strict structured-output schema bug; after the fix, the skill-authoring and direct-run checks passed. An integrated nested SDK run inside a sandboxed Codex host still failed to initialize Codex state. See the [eval results](evals/RESULTS.md), [Ultracode parity report](docs/ULTRACODE-PARITY.md), and [recovered prose comparison](docs/PROSE-DIFF.md) for the exact boundary.
 
-The project does not claim complete Ultracode parity or 100% branch coverage. Run `npm run coverage` for the current measurements; the 0.1.0 release measured **100% lines, 78.88% branches, and 97.78% functions**.
+The project does not claim complete Ultracode parity or 100% branch coverage. Run `npm run coverage` for the current measurements; the 0.1.1 candidate measured **93.12% lines, 78.34% branches, and 89.66% functions** across runtime, adapters, and hooks. The restored prompt module itself measured 100% in all three metrics.
 
 ## Scope and provenance
 
-Autocode is an independent implementation of local workflow orchestration, released under [Apache-2.0](LICENSE). This repository contains its own code, templates, tests, and an expanded adaptation of the recovered Ultracode authoring guidance. Extracted third-party bundle modules and verbatim prompt assets are not included.
+Autocode is an independent implementation of local workflow orchestration, released under [Apache-2.0](LICENSE). This 0.1.1 candidate contains its own runner, templates, and tests, plus [recovered Ultracode prompt assets](references/source-prompts/) for instruction parity. The original subagent text and structured prompts are loaded at runtime with substitutions for unavailable SDK tools. Extracted bundle modules are not included. The current npm `latest` release does not contain these candidate changes.
 
 Run only workflow scripts you trust. Node's VM provides workflow globals but is not a security boundary. The SDKs may start their own local runtimes internally; Autocode calls their programmatic APIs rather than constructing `codex exec` or `claude -p` commands.

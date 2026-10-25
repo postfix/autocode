@@ -4,8 +4,7 @@ import { spawn } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 
@@ -18,7 +17,9 @@ test('npm tarball contains the executable skill without development files', asyn
   assert.deepEqual(manifest.repository, { type: 'git',
     url: 'git+https://github.com/postfix/autocode.git' });
   assert.equal(manifest.bin?.autocode, 'scripts/autocode.mjs');
-  const cache = await mkdtemp(join(tmpdir(), 'autocode-npm-cache-'));
+  const scratch = join(root, '..', '.scratch');
+  await mkdir(scratch, { recursive: true });
+  const cache = await mkdtemp(join(scratch, 'autocode-npm-cache-'));
   let output;
   try {
     const code = await new Promise((done, reject) => {
@@ -34,8 +35,18 @@ test('npm tarball contains the executable skill without development files', asyn
   const [{ files }] = JSON.parse(output);
   const paths = files.map(file => file.path);
   for (const path of ['SKILL.md', 'LICENSE', 'README.md', 'INSTALL.md', 'USAGE.md',
-    'agents/openai.yaml', 'references/authoring.md', 'references/quality-patterns.md', 'scripts/autocode.mjs',
+    'docs/PROSE-DIFF.md', 'hooks/autocode-mode.cjs', 'hooks/claude-codex-hooks.json',
+    '.codex-plugin/plugin.json', '.claude-plugin/plugin.json',
+    '.claude-plugin/marketplace.json', '.agents/plugins/marketplace.json',
+    'agents/openai.yaml', 'references/authoring.md', 'references/quality-patterns.md',
+    'references/source-prompts/authoring.md', 'references/source-prompts/authoring-forced-model.md',
+    'references/source-prompts/workflow-tool.md', 'references/source-prompts/workflow-tool-alternate.md',
+    'references/source-prompts/authoring-preamble.txt',
+    'references/source-prompts/activation-reminders.json',
+    'references/source-prompts/subagent-prompts.json',
+    'references/source-prompts/prose-fragments.md', 'scripts/autocode.mjs',
     'scripts/codex-adapter.mjs', 'scripts/claude-adapter.mjs', 'scripts/runtime.mjs',
+    'scripts/subagent-prompt.mjs',
     'assets/templates/parallel-scout.js', 'assets/templates/review-and-verify.js',
     'assets/templates/exhaustive-review.js',
     'assets/templates/mixed-provider.js']) assert.ok(paths.includes(path), path);

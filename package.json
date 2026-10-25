@@ -17,14 +17,25 @@
     "README.md",
     "INSTALL.md",
     "USAGE.md",
+    "docs/PROSE-DIFF.md",
+    "hooks/autocode-mode.cjs",
+    "hooks/claude-codex-hooks.json",
+    ".codex-plugin/plugin.json",
+    ".claude-plugin/plugin.json",
+    ".claude-plugin/marketplace.json",
+    ".agents/plugins/marketplace.json",
     "agents/openai.yaml",
     "references/authoring.md",
     "references/quality-patterns.md",
+    "references/source-prompts/*.md",
+    "references/source-prompts/*.json",
+    "references/source-prompts/*.txt",
     "assets/templates/*.js",
     "scripts/autocode.mjs",
     "scripts/claude-adapter.mjs",
     "scripts/codex-adapter.mjs",
-    "scripts/runtime.mjs"
+    "scripts/runtime.mjs",
+    "scripts/subagent-prompt.mjs"
   ],
   "engines": {
     "node": ">=20"

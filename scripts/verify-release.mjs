@@ -3,10 +3,22 @@ import { pathToFileURL } from 'node:url';
 
 const required = new Set([
   'package.json', 'LICENSE', 'README.md', 'INSTALL.md', 'USAGE.md', 'SKILL.md',
+  'docs/PROSE-DIFF.md', 'hooks/autocode-mode.cjs', 'hooks/claude-codex-hooks.json',
+  '.codex-plugin/plugin.json', '.claude-plugin/plugin.json',
+  '.claude-plugin/marketplace.json', '.agents/plugins/marketplace.json',
   'agents/openai.yaml', 'references/authoring.md', 'references/quality-patterns.md',
+  'references/source-prompts/authoring.md',
+  'references/source-prompts/authoring-forced-model.md',
+  'references/source-prompts/workflow-tool.md',
+  'references/source-prompts/workflow-tool-alternate.md',
+  'references/source-prompts/authoring-preamble.txt',
+  'references/source-prompts/activation-reminders.json',
+  'references/source-prompts/subagent-prompts.json',
+  'references/source-prompts/prose-fragments.md',
   'assets/templates/parallel-scout.js', 'assets/templates/review-and-verify.js',
   'assets/templates/exhaustive-review.js', 'assets/templates/mixed-provider.js', 'scripts/autocode.mjs',
   'scripts/claude-adapter.mjs', 'scripts/codex-adapter.mjs', 'scripts/runtime.mjs',
+  'scripts/subagent-prompt.mjs',
 ]);
 
 export function verifyRelease(tag, manifest, lock, pack) {

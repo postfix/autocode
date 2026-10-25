@@ -16,6 +16,26 @@ ln -s "$AUTOCODE_DIR" ~/.claude/skills/autocode
 
 The npm install provides the `autocode` command and both native SDK dependencies. The links make `SKILL.md` discoverable to Codex and Claude. If either skill path already exists, inspect it and move or replace it deliberately before creating the link; keep backups outside the `skills` directories so they are not discovered as duplicate skills.
 
+## Enable session reminders
+
+The skill works on explicit requests without a plugin. To enable one-turn `ultracode` keyword detection and persistent `autocode on` / `autocode off` reminders, install the hook plugin from the public repository. The plugin contains hooks only; the skill link above remains the single skill installation.
+
+Codex CLI:
+
+```bash
+codex plugin marketplace add postfix/autocode
+codex plugin add autocode@autocode
+```
+
+In Codex, open `/hooks`, trust the Autocode lifecycle hooks, and start a new thread. In Claude Code, run:
+
+```text
+/plugin marketplace add postfix/autocode
+/plugin install autocode@autocode
+```
+
+Start a new Claude session after installation. Plain `ultracode` in a human request opts that turn into a workflow; `autocode on` or `ultracode on` enables standing mode for substantive tasks until `autocode off` or `ultracode off`. The plugin stores per-session mode state; npm installation by itself does not register the hooks.
+
 ## Install from a checkout
 
 The GitHub repository is public. The pinned SDK dependencies are in `package-lock.json`.
