@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -89,6 +89,26 @@ test('command prints a workflow result and reports usage errors', async () => {
     assert.equal(JSON.parse(await readFile(join(dir, 'out'), 'utf8')).result, 5);
     assert.equal(await invoke(['run', script, '--unknown', 'x']), 1);
     assert.match(await readFile(join(dir, 'err'), 'utf8'), /unknown option/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('npm-style bin symlink runs the command', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'autocode-bin-'));
+  const bin = join(dir, 'autocode');
+  const script = join(dir, 'workflow.js');
+  const output = join(dir, 'out.json');
+  await symlink(command, bin);
+  await writeFile(script, 'export const meta = {name:"bin",description:"Check symlink"};\nreturn "PACKAGED_OK";');
+  try {
+    const code = await new Promise((done, reject) => {
+      const child = spawn('/bin/sh', ['-c', '"$BIN" run "$SCRIPT" --run-dir "$RUN" > "$OUT" 2> "$ERR"'],
+        { stdio: 'ignore', env: { ...process.env, BIN: bin, SCRIPT: script,
+          RUN: join(dir, 'run'), OUT: output, ERR: join(dir, 'err') } });
+      child.on('error', reject);
+      child.on('close', done);
+    });
+    assert.equal(code, 0, await readFile(join(dir, 'err'), 'utf8'));
+    assert.equal(JSON.parse(await readFile(output, 'utf8')).result, 'PACKAGED_OK');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 

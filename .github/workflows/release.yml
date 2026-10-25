@@ -1,0 +1,52 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  release:
+    if: github.repository == 'postfix/autocode'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+      - run: npm ci
+      - run: npm test
+      - name: Verify release tag and tarball
+        run: |
+          npm pack --dry-run --json > "$RUNNER_TEMP/pack.json"
+          release_tag="$GITHUB_REF_NAME"
+          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
+            release_tag="v$(node -p "require('./package.json').version")"
+          fi
+          node scripts/verify-release.mjs "$release_tag" "$RUNNER_TEMP/pack.json"
+      - name: Pack verified files
+        id: pack
+        run: |
+          filename=$(npm pack --json | node -e "let data='';process.stdin.on('data',chunk=>data+=chunk).on('end',()=>process.stdout.write(JSON.parse(data)[0].filename))")
+          echo "filename=$filename" >> "$GITHUB_OUTPUT"
+      - name: Install and smoke test the tarball
+        run: |
+          npm install -g --prefix "$RUNNER_TEMP/autocode-smoke" "./${{ steps.pack.outputs.filename }}"
+          printf '%s\n' "export const meta = { name: 'smoke', description: 'Check packaged CLI' };" "return 'PACKAGED_OK';" > "$RUNNER_TEMP/smoke.js"
+          "$RUNNER_TEMP/autocode-smoke/bin/autocode" run "$RUNNER_TEMP/smoke.js" --run-dir "$RUNNER_TEMP/autocode-smoke-run" | grep '"result":"PACKAGED_OK"'
+      - name: Publish to npm
+        if: github.event_name == 'push'
+        run: npm publish "./${{ steps.pack.outputs.filename }}" --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Create GitHub Release
+        if: github.event_name == 'push'
+        run: gh release create "$GITHUB_REF_NAME" "./${{ steps.pack.outputs.filename }}" --verify-tag --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}

@@ -28,9 +28,11 @@ Save the file as `inspect.js`. The host agent can spend more effort designing th
 ## Run and resume
 
 ```bash
-node "$HOME/.codex/skills/autocode/scripts/autocode.mjs" run inspect.js \
+autocode run inspect.js \
   --provider codex --run-dir .codex/autocode-runs/inspect
 ```
+
+The `autocode` command is installed by `npm install -g autocode-skill`. From a source checkout, run `node "$HOME/.codex/skills/autocode/scripts/autocode.mjs"` with the same arguments.
 
 `--provider` selects the default for calls without `opts.provider`. Use `--provider claude` to change it. Use `--args '{"target":"src"}'` to supply a JSON value; omitted `args` is `undefined`. `--cwd <directory>` selects the project directory for both SDKs. `--budget <tokens>` sets a soft output-token target: calls already running can make the final total exceed it.
 
