@@ -1,11 +1,12 @@
 # Install Autocode
 
 Autocode needs Node.js 20 or newer and authentication for whichever provider you use. The pinned native SDK dependencies are in `package-lock.json`.
+The SSH clone command below uses your GitHub SSH key. Your account needs access while the repository remains private.
 
 ## Clone and install
 
 ```bash
-git clone https://github.com/postfix/autocode.git ~/.local/share/autocode
+git clone git@github.com:postfix/autocode.git ~/.local/share/autocode
 cd ~/.local/share/autocode
 npm ci
 npm test

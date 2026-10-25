@@ -18,7 +18,7 @@ Save the file as `inspect.js`. The host agent can spend more effort designing th
 ## Run and resume
 
 ```bash
-node /path/to/autocode/scripts/autocode.mjs run inspect.js \
+node "$HOME/.codex/skills/autocode/scripts/autocode.mjs" run inspect.js \
   --provider codex --run-dir .codex/autocode-runs/inspect
 ```
 
