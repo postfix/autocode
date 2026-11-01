@@ -5,6 +5,8 @@ description: Build and run JavaScript multi-agent workflows when the user reques
 
 # Autocode
 
+For statistics or pause/resume/cancel of an existing run, use **Inspect and control** below directly. Select the existing run directory; these requests do not start another workflow.
+
 Deliver the workflow's verified result when the user invokes Autocode or asks for multi-agent orchestration. Handle a conversational answer or trivial edit directly. For an exhaustive request, cover the discovered work list, verify findings independently, and log any omitted scope. Agent calls can spend substantial tokens; follow the user's scale and budget. The authoring agent can use high effort while each delegated `agent()` call uses a smaller model, lower effort, or another provider when that fits its task.
 
 When the optional Autocode plugin supplies a keyword or session-mode reminder, treat it as the user's workflow opt-in. In standing mode, author and run a workflow for every substantive task; use solo work for conversation and trivial edits. `autocode off` returns to explicit opt-in.
@@ -31,6 +33,28 @@ autocode run workflow.js --provider codex --args '{"files":["src/a.js"]}'
 ```
 
 Use `--provider claude` when Claude should execute calls by default. Set a provider, model, and effort for a specific call with `agent(prompt, { provider: 'claude', model: 'haiku', effort: 'low' })`. Both adapters use native JavaScript SDKs. Progress streams to stderr; stdout contains JSON with `result`, `failures`, `logs`, `agentCount`, `outputTokens`, `runId`, and `runDir`. Pass `--run-dir <dir>` to choose a journal location. Resume the same script and directory with `--resume <runId>`; completed calls with unchanged inputs replay from the journal. Use `--budget <tokens>` for a soft output-token target. Delegated agents default to read-only tools; set `--sandbox workspace-write` when the user authorized edits.
+
+## Inspect and control
+
+Use the current project folder. The runner prints the workflow ID when it starts; no run directory is needed for controls:
+
+```bash
+autocode ps
+autocode status [id]
+autocode status [id] --json
+autocode status [id] --agent <agent-row-id>
+autocode pause [id]
+autocode resume [id]
+autocode cancel [id]
+```
+
+`[id]` is optional syntax: replace it with a workflow ID or omit it. `ps` lists active and paused workflows in this project, including custom journal locations. With exactly one active workflow, a command without an ID selects it automatically. With several, list their IDs, names and states and ask which to manage; do not choose one yourself. A terminal asks interactively; host tools receive a `selection-required` response and question. After the user's choice, rerun the requested command with that ID. With none active, report that there is no active workflow. An explicit `status <id>` also inspects completed, failed or cancelled workflows.
+
+Details include phases, agents, provider/requested model, elapsed time, reported tokens and recorded errors, including tool errors inside otherwise successful agents. Show the actual errors; missing usage is unknown, not zero or an estimate.
+
+On Linux, `pause` freezes the running program and its owned process tree; `resume` continues that same run. `cancel` terminates the program and agents, keeping its journal and existing files. It does not undo writes. A later `run ... --resume <runId>` starts journal replay after termination; it differs from resuming a paused live program. Local pause cannot guarantee that a remote provider stops inference or billing, and wall-clock deadlines can expire while paused.
+
+Live controls require a run started by the updated CLI. Embedded `runWorkflow()` calls and older runs have no CLI controller. Use their owner's controls. Read [USAGE.md](USAGE.md#inspect-and-control-a-running-program) for limits and retained errors.
 
 ## Check the result
 

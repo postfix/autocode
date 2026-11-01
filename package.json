@@ -35,6 +35,8 @@
     "scripts/claude-adapter.mjs",
     "scripts/codex-adapter.mjs",
     "scripts/runtime.mjs",
+    "scripts/run-control.mjs",
+    "scripts/run-stats.mjs",
     "scripts/subagent-prompt.mjs"
   ],
   "engines": {

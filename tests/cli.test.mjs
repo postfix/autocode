@@ -80,7 +80,7 @@ test('command prints a workflow result and reports usage errors', async () => {
   await writeFile(script, 'export const meta = {name:"simple",description:"Return a number"};\nreturn 5;');
   const invoke = (args) => new Promise((done, reject) => {
     const child = spawn('/bin/sh', ['-c', '"$@" > "$OUT" 2> "$ERR"', 'sh', process.execPath, command, ...args],
-      { stdio: 'ignore', env: { ...process.env, OUT: join(dir, 'out'), ERR: join(dir, 'err') } });
+      { cwd:dir, stdio: 'ignore', env: { ...process.env, OUT: join(dir, 'out'), ERR: join(dir, 'err') } });
     child.on('error', reject);
     child.on('close', done);
   });
@@ -102,7 +102,7 @@ test('npm-style bin symlink runs the command', async () => {
   try {
     const code = await new Promise((done, reject) => {
       const child = spawn('/bin/sh', ['-c', '"$BIN" run "$SCRIPT" --run-dir "$RUN" > "$OUT" 2> "$ERR"'],
-        { stdio: 'ignore', env: { ...process.env, BIN: bin, SCRIPT: script,
+        { cwd:dir, stdio: 'ignore', env: { ...process.env, BIN: bin, SCRIPT: script,
           RUN: join(dir, 'run'), OUT: output, ERR: join(dir, 'err') } });
       child.on('error', reject);
       child.on('close', done);

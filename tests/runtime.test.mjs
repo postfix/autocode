@@ -60,6 +60,7 @@ test('resume surfaces a malformed journal instead of treating it as empty', asyn
   const script = '/* autocode {"name":"resume","description":"Check journal error"} */\nreturn 1;';
   try {
     const first = await runWorkflow({ script, runDir, agent: async () => { throw Error('unused'); } });
+    await rm(join(runDir, 'journal.jsonl'));
     await mkdir(join(runDir, 'journal.jsonl'));
     await assert.rejects(runWorkflow({ script, runDir, resumeFromRunId: first.runId,
       agent: async () => { throw Error('unused'); } }), /EISDIR/);

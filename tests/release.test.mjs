@@ -24,7 +24,7 @@ const paths = ['package.json', 'LICENSE', 'README.md', 'INSTALL.md', 'USAGE.md',
   'assets/templates/parallel-scout.js', 'assets/templates/review-and-verify.js',
   'assets/templates/exhaustive-review.js', 'assets/templates/mixed-provider.js', 'scripts/autocode.mjs',
   'scripts/claude-adapter.mjs', 'scripts/codex-adapter.mjs', 'scripts/runtime.mjs',
-  'scripts/subagent-prompt.mjs'];
+  'scripts/subagent-prompt.mjs', 'scripts/run-control.mjs', 'scripts/run-stats.mjs'];
 const pack = { name: 'autocode-skill', version: '0.1.1',
   files: paths.map(path => ({ path })) };
 

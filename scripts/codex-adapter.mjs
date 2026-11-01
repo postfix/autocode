@@ -38,8 +38,25 @@ export async function codexAgent(prompt, opts = {}, context = {}) {
   const thread = client.startThread({ workingDirectory: cwd, sandboxMode: sandbox,
     model: opts.model, modelReasoningEffort: opts.effort,
     skipGitRepoCheck: true, approvalPolicy: 'never' });
-  const turn = await thread.run(subagentPrompt(prompt, !!opts.schema),
-    { outputSchema: opts.schema ? codexSchema(opts.schema) : undefined, signal });
+  const options={ outputSchema: opts.schema ? codexSchema(opts.schema) : undefined, signal };
+  let turn;
+  if(context.onActivity&&typeof thread.runStreamed==='function') {
+    const stream=await thread.runStreamed(subagentPrompt(prompt,!!opts.schema),options);
+    let finalResponse='',usage;
+    for await(const event of stream.events) {
+      if(event.type==='turn.failed'||event.type==='error')throw Error(event.error?.message??event.message??'Codex turn failed');
+      if(event.type==='turn.completed')usage=event.usage;
+      const item=event.item;
+      if(event.type==='item.completed'&&item?.type==='agent_message')finalResponse=item.text;
+      if(['item.started','item.completed'].includes(event.type)&&['command_execution','mcp_tool_call','file_change','error'].includes(item?.type)) {
+        const failed=item.status==='failed'||typeof item.exit_code==='number'&&item.exit_code!==0||item.type==='error';
+        context.onActivity({id:item.id,tool:item.type==='mcp_tool_call'?item.tool:item.type,status:failed?'failed':event.type==='item.started'?'running':'completed',exitCode:item.exit_code,message:failed?item.aggregated_output??item.error?.message??item.message:undefined});
+      }
+    }
+    if(!usage)throw Error('Codex stream ended without a completed turn');
+    turn={finalResponse,usage};
+  }else turn=await thread.run(subagentPrompt(prompt,!!opts.schema),options);
+  context.onUsage?.({inputTokens:turn.usage?.input_tokens,cachedInputTokens:turn.usage?.cached_input_tokens});
   const result = opts.schema ? JSON.parse(turn.finalResponse) : turn.finalResponse.trimEnd();
   if (opts.schema && (typeof result !== 'object' || result === null || Array.isArray(result)))
     throw new TypeError('Codex returned a non-object structured result');

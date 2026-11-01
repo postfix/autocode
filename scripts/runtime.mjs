@@ -4,6 +4,7 @@ import { appendFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { availableParallelism } from 'node:os';
 import { join } from 'node:path';
 import { Script, createContext } from 'node:vm';
+import { safeText } from './run-stats.mjs';
 
 function parseHeader(source) {
   const comment = /^\/\* autocode ([^\n]*?) \*\/[\r\n]+/.exec(source);
@@ -32,7 +33,8 @@ function parseHeader(source) {
 
 export async function runWorkflow({ script, args, runDir, agent, budget = null, signal,
   concurrency = Math.min(16, Math.max(2, availableParallelism() - 2)), resumeFromRunId,
-  resolveWorkflow, onProgress }) {
+  resolveWorkflow, onProgress, defaultProvider, initialRunId }) {
+  if(initialRunId!==undefined&&!/^wf_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(initialRunId))throw new TypeError('invalid initial workflow ID');
   if (typeof script !== 'string') throw new TypeError('script must be a string');
   const { meta } = parseHeader(script);
   if (typeof meta.name !== 'string' || !meta.name.trim() ||
@@ -62,12 +64,18 @@ export async function runWorkflow({ script, args, runDir, agent, budget = null, 
       if (event.type === 'result') cached.set(event.key, event.result);
     }
   } else {
-    runId = `wf_${randomUUID()}`;
+    runId = initialRunId ?? `wf_${randomUUID()}`;
     await writeFile(runFile, JSON.stringify({ runId, name: meta.name, script, args }), { flag: 'wx' });
   }
   let journalQueue = Promise.resolve();
-  const record = (event) => journalQueue = journalQueue.then(() =>
-    appendFile(journalFile, `${JSON.stringify(event)}\n`));
+  const attemptId=randomUUID();
+  const record = (event) => {
+    const entry={...event,time:Date.now(),attemptId};
+    journalQueue=journalQueue.then(()=>appendFile(journalFile,`${JSON.stringify(entry)}\n`));
+    journalQueue.catch(()=>{});
+    return journalQueue;
+  };
+  await record({type:'run-started',concurrency,provider:defaultProvider??null,phases:Array.isArray(meta.phases)?meta.phases.slice(0,1000).map(p=>({title:safeText(p?.title,160),detail:safeText(p?.detail)})):[]});
   const canonical = (value) => {
     if (Array.isArray(value)) return value.map(canonical);
     if (value && typeof value === 'object')
@@ -84,6 +92,7 @@ export async function runWorkflow({ script, args, runDir, agent, budget = null, 
   let active = 0;
   const waiting = [];
   const failures = [];
+  let activityCount=0;
   const contexts = new AsyncLocalStorage();
   const realmValue = (value) => {
     const json = JSON.stringify(value);
@@ -104,6 +113,7 @@ export async function runWorkflow({ script, args, runDir, agent, budget = null, 
     }
   };
   const invokeAgent = async (prompt, opts = {}) => {
+    signal?.throwIfAborted();
     if (typeof prompt !== 'string' || !prompt.trim()) throw new TypeError('agent prompt must be a non-empty string');
     if (agentCount >= 1000) throw Error('Autocode agent call cap reached (1000)');
     agentCount++;
@@ -112,23 +122,35 @@ export async function runWorkflow({ script, args, runDir, agent, budget = null, 
     const branch = branches.getStore() ?? root;
     const key = createHash('sha256').update(`v1\0${branch.previousKey}\0${prompt}\0${JSON.stringify(canonical(cacheOpts))}`).digest('hex');
     branch.previousKey = key;
-    if (cached.has(key)) return realmValue(cached.get(key));
+    const details={label:safeText(opts.label??prompt.split('\n')[0],160),phase:opts.phase??currentPhase,provider:opts.provider??defaultProvider??null,model:opts.model??null};
+    if (cached.has(key)) {await record({type:'cached',key,...details});return realmValue(cached.get(key));}
+    await record({type:'queued',key,...details});
     return inSlot(async () => {
+      signal?.throwIfAborted();
       if (budget !== null && outputTokens >= budget) throw Error('Autocode token budget exceeded');
       const progress = { label: opts.label ?? prompt, phase: opts.phase ?? currentPhase };
-      await record({ type: 'started', key });
+      await record({ type: 'started', key, ...details });
       onProgress?.({ type: 'agent-started', ...progress });
       try {
-        const response = await agent(prompt, opts, { signal, runDir });
+        const usage={};
+        const response = await agent(prompt, opts, { signal, runDir,
+          onUsage:counts=>{for(const field of ['inputTokens','cachedInputTokens'])if(Number.isSafeInteger(counts?.[field])&&counts[field]>=0)usage[field]=counts[field];},
+          onActivity:event=>{
+            if(!event||typeof event.tool!=='string'||!['running','completed','failed'].includes(event.status))return;
+            if(activityCount++>=1000){if(activityCount===1001)record({type:'activity-truncated',key});return;}
+            record({type:'activity',key,tool:safeText(event.tool,100),status:event.status,id:safeText(event.id,160),exitCode:Number.isSafeInteger(event.exitCode)?event.exitCode:null,message:safeText(event.message)});
+          },
+        });
         if (!response || !Number.isSafeInteger(response.outputTokens) || response.outputTokens < 0)
           throw new TypeError('agent adapter must return a non-negative outputTokens count');
         outputTokens += response.outputTokens;
         const result = structuredClone(response.result);
         await record({ type: 'result', key, result });
+        await record({type:'agent-finished',key,outputTokens:response.outputTokens,...usage});
         onProgress?.({ type: 'agent-completed', ...progress });
         return realmValue(result);
       } catch (error) {
-        await record({ type: 'failed', key, message: String(error?.message ?? error) });
+        await record({ type: 'failed', key, message: safeText(error?.message ?? error) });
         onProgress?.({ type: 'agent-failed', ...progress });
         throw error;
       }
@@ -237,7 +259,14 @@ export async function runWorkflow({ script, args, runDir, agent, budget = null, 
     });
     return contexts.run(context, () => code.runInContext(context, { timeout: 30_000 }));
   };
-  const result = await execute(script, args, 0);
-  await journalQueue;
-  return { result: structuredClone(result), agentCount, outputTokens, failures, logs, runId };
+  try {
+    signal?.throwIfAborted();
+    const result = await execute(script, args, 0);
+    signal?.throwIfAborted();
+    await record({type:'run-finished',failures:failures.map(x=>safeText(x))});
+    return { result: structuredClone(result), agentCount, outputTokens, failures, logs, runId };
+  } catch(error) {
+    await record({type:'run-failed',message:safeText(error?.message??error)});
+    throw error;
+  } finally {for(const id of timers.keys())cancelTimer(id);await journalQueue;}
 }

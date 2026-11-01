@@ -28,6 +28,18 @@ node scripts/autocode.mjs run assets/templates/parallel-scout.js \
 
 The command prints progress to stderr and a JSON result to stdout. [USAGE.md](USAGE.md) explains skill use, the workflow API, mixed-provider calls, resume, limits, and permission modes. The [quality patterns](references/quality-patterns.md) preserve the recovered Ultracode workflow decisions and worked examples in Autocode's API. The [exhaustive review template](assets/templates/exhaustive-review.js) runs repeated discovery, skeptical verification, and a completeness check.
 
+Inspect and control a CLI run from another terminal:
+
+```bash
+autocode ps
+autocode status [id]
+autocode pause [id]
+autocode resume [id]
+autocode cancel [id]
+```
+
+Commands find workflows in the current project, including runs with custom journal locations. Omit the optional ID when only one workflow is active; with several, choose from the displayed list. `ps` lists active and paused workflows. Status shows phases, agents, reported usage and errors, including failed tools within successful agents. Linux live controls pause/resume the actual program or terminate its owned process tree. See [control semantics and limits](USAGE.md#inspect-and-control-a-running-program).
+
 The npm package is named `autocode-skill` because `autocode` is already occupied on npm. The package installs an `autocode` command and includes the skill files; [release instructions](RELEASING.md) cover the initial MFA bootstrap and subsequent GitHub Trusted Publishing.
 
 ## What has been tested

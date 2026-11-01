@@ -46,7 +46,7 @@ test('npm tarball contains the executable skill without development files', asyn
     'references/source-prompts/subagent-prompts.json',
     'references/source-prompts/prose-fragments.md', 'scripts/autocode.mjs',
     'scripts/codex-adapter.mjs', 'scripts/claude-adapter.mjs', 'scripts/runtime.mjs',
-    'scripts/subagent-prompt.mjs',
+    'scripts/subagent-prompt.mjs', 'scripts/run-control.mjs', 'scripts/run-stats.mjs',
     'assets/templates/parallel-scout.js', 'assets/templates/review-and-verify.js',
     'assets/templates/exhaustive-review.js',
     'assets/templates/mixed-provider.js']) assert.ok(paths.includes(path), path);
