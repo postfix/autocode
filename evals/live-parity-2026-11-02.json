@@ -1,0 +1,181 @@
+{
+  "date": "2026-11-02",
+  "checks": [
+    {
+      "name": "Codex text output",
+      "result": "passed"
+    },
+    {
+      "name": "Claude text output",
+      "result": "passed"
+    },
+    {
+      "name": "Codex structured output",
+      "result": "passed"
+    },
+    {
+      "name": "Claude structured output",
+      "result": "passed"
+    },
+    {
+      "name": "Codex MCP tool execution",
+      "result": "passed"
+    },
+    {
+      "name": "Claude MCP tool execution with explicit host permission",
+      "result": "passed"
+    },
+    {
+      "name": "Codex workspace-write in isolated worktree",
+      "result": "passed"
+    },
+    {
+      "name": "Claude workspace-write in isolated worktree",
+      "result": "passed"
+    },
+    {
+      "name": "Codex optional-property structured transport",
+      "result": "passed"
+    },
+    {
+      "name": "Claude authorized Bash execution",
+      "result": "passed"
+    },
+    {
+      "name": "Codex native Bash denial",
+      "result": "passed"
+    },
+    {
+      "name": "Codex workspace-write parent to supervised CLI to real Codex SDK",
+      "result": "passed",
+      "expected_result": "NESTED_SDK_OK",
+      "actual_result": "NESTED_SDK_OK",
+      "parent_config": {
+        "sandboxMode": "workspace-write",
+        "approvalPolicy": "never",
+        "config": {
+          "sandbox_workspace_write": {
+            "network_access": true
+          },
+          "features": {
+            "multi_agent": false
+          }
+        }
+      },
+      "host_contract": {
+        "private_writable_codexHome": true,
+        "authenticated_host_state": true,
+        "temporary_auth_and_config_links_removed": true
+      },
+      "evidence": ".scratch/nested-host-AAl2XS/host-network-result.json",
+      "run_directory": ".scratch/nested-host-AAl2XS/run-network-1793620942018",
+      "exit_code": 0,
+      "agent_count": 1,
+      "output_tokens": 10,
+      "journal_outcome": "run-finished"
+    },
+    {
+      "name": "Codex tagged object union with omitted nested optional property",
+      "result": "passed",
+      "provider": "codex",
+      "model": "configured default (not overridden)",
+      "schema_summary": "answer oneOf integer or closed object with kind const 'text' and optional note string",
+      "actual_result": {
+        "answer": {
+          "kind": "text"
+        }
+      },
+      "output_tokens": 89,
+      "fixture": ".scratch/schema-union (removed after run)",
+      "limits": [
+        "Initial gpt-5.4-mini selection returned model_not_found for this account; configured default model retry passed",
+        "Checks tagged object union transport and omitted nested optional property, not every union shape"
+      ]
+    },
+    {
+      "name": "Codex live resume and changed-effort invalidation",
+      "result": "passed",
+      "evidence": ".scratch/live-resume-result.json",
+      "provider_calls": 2
+    },
+    {
+      "name": "Claude live resume and changed-effort invalidation",
+      "result": "passed",
+      "evidence": ".scratch/live-resume-result.json",
+      "provider_calls": 2
+    },
+    {
+      "name": "Explicit per-call model switching on both providers",
+      "result": "passed",
+      "models": {
+        "codex": [
+          "gpt-6.1-sol",
+          "gpt-6-sol"
+        ],
+        "claude": [
+          "haiku",
+          "sonnet"
+        ]
+      },
+      "evidence": ".scratch/live-models-result.json"
+    },
+    {
+      "name": "Codex validated JSON fallback for allOf and open-object schemas",
+      "result": "passed",
+      "evidence": ".scratch/live-schema-fallback-result.json"
+    },
+    {
+      "name": "Current skill installed in disposable Codex home: real authoring plus actual CLI reviewers and verifier",
+      "result": "passed",
+      "checks": [
+        "skillAuthoredWorkflow",
+        "sdkAgentsCompleted",
+        "bugVerified",
+        "sourceUnchanged"
+      ],
+      "resultCount": 3,
+      "evidence": ".scratch/live-installed-skill-result.json"
+    },
+    {
+      "name": "Native Codex transport: text, typed model failure, strict optional schema and actual MCP ping",
+      "result": "passed",
+      "native_version": "0.164.0",
+      "evidence": ".scratch/live-native-result.json"
+    },
+    {
+      "name": "Claude custom native tool pools: Read-only, MCP-only and empty tool list",
+      "result": "passed",
+      "evidence": [
+        ".scratch/claude-adapter-root-tools-result.json",
+        ".scratch/final-adapter-boundaries-result.json"
+      ]
+    },
+    {
+      "name": "Claude trusted host deny blocks automatically trusted Read; permitted MCP calls callback once",
+      "result": "passed",
+      "evidence": [
+        ".scratch/claude-public-policy-read-result.json",
+        ".scratch/claude-public-policy-mcp-result.json"
+      ]
+    },
+    {
+      "name": "Native Codex trusted instructions and Bash denial are applied",
+      "result": "passed",
+      "evidence": ".scratch/final-adapter-boundaries-result.json"
+    },
+    {
+      "name": "Full integrated author-execute-review-verify task on Luna and Haiku5.5",
+      "result": "passed",
+      "report": "full-task-results-2026-11-02.json",
+      "limits": "Actual native Codex passed without MCP using normal authorized CLI execution; earlier restricted SDK-parent experiments are preserved separately."
+    }
+  ],
+  "fixture_root": ".scratch/",
+  "limits": [
+    "No installed plugin/session-hook lifecycle end-to-end run; nested Codex parent command execution was checked explicitly",
+    "No live quota-exhaustion experiment",
+    "No publication or deployment",
+    "Nested SDK canary used explicit authenticated writable codexHome and network-enabled workspace-write parent commands; no automatic transcript or live MCP inheritance was inferred",
+    "Installed skill authoring/CLI and packaged hook commands verified; native plugin trust UI/loading not automated."
+  ]
+}

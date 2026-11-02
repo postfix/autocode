@@ -1,0 +1,162 @@
+tdd: CLI can skip one running agent while its workflow continues — red: autocode: usage: autocode run <script.js> [--provider codex|claude] [options] — green: node tests/agent-control-cli.test.mjs passed
+tdd: background launch returns a controllable workflow before its program finishes — red: autocode: invalid option: --background — green: node tests/background-parity.test.mjs passed
+tdd: a child phase cannot replace the parent phase — red: + phase: 'Child phase' - phase: 'Review' — green: node tests/child-phase.test.mjs passed
+tdd: child agents use their own progress group and leave parent agents in the parent phase — red: - 'workflow child' + 'Review' — green: node tests/child-phase.test.mjs passed
+tdd: console messages are visible as workflow progress — red: + [] — green: node tests/console-parity.test.mjs passed
+tdd: workflow console does not expose a host Function constructor — red: + 'object' - 'blocked' — green: node tests/console-parity.test.mjs passed
+tdd: CLI context supplies provider defaults without putting them in workflow source — red: Error: unknown option: --context — green: node tests/context-cli.test.mjs passed
+tdd: changing CLI permission mode invalidates cached agent results — red: + 'read-only' - 'workspace-write' — green: node tests/context-cli.test.mjs passed
+tdd: saved workflow discovery exposes usage metadata without executing scripts — red: Error: usage: autocode run <script.js> [--provider codex|claude] [options] — green: node tests/context-cli.test.mjs passed
+tdd: Claude reports output usage even when the SDK result fails — red: undefined !== 11 — green: node tests/failed-provider-usage.test.mjs passed
+tdd: Codex reports spent tokens before structured-output parsing can fail — red: undefined !== 13 — green: node tests/failed-provider-usage.test.mjs passed
+tdd: Claude distinguishes terminal API refusal from workflow programming errors — red: The validation function is expected to return "true". Received false — green: node tests/failed-provider-usage.test.mjs passed
+tdd: standing reminders retain the recovered exhaustive-quality instructions — red: The input did not match the regular expression /token cost is not a constraint/. — green: node tests/hooks.test.mjs passed
+tdd: agents inherit resolved model and effort from trusted host context — red: effort: null, model: null; expected effort: 'high', model: 'host-model' — green: node tests/host-context.test.mjs passed
+tdd: workflows sharing a host budget cannot independently spend its remaining tokens — red: AssertionError [ERR_ASSERTION]: Missing expected rejection. — green: node tests/host-context.test.mjs passed
+tdd: a trusted spawn hook can deny a computed agent task — red: AssertionError [ERR_ASSERTION]: Missing expected rejection. — green: node tests/host-context.test.mjs passed
+tdd: a host-forced model takes precedence over workflow model choices — red: + 'other-model' - 'required-model' — green: node tests/host-context.test.mjs passed
+tdd: custom agent defaults take precedence over inherited provider defaults — red: + 'host-model' - 'custom-model' — green: node tests/host-context.test.mjs passed
+tdd: host-denied calls still count toward the workflow agent-call cap — red: + 'uncapped' - 'capped' — green: node tests/host-context.test.mjs passed
+tdd: named-only host policy refuses child script paths — red: AssertionError [ERR_ASSERTION]: Missing expected rejection. — green: node tests/host-context.test.mjs passed
+tdd: a host can supply an authoritative named workflow registry — red: Error: named workflow resolver is unavailable — green: node tests/host-context.test.mjs passed
+tdd: an interrupted final journal write does not discard completed answers — red: SyntaxError: Unterminated string in JSON at position 12 (line 1 column 13) — green: node tests/journal-recovery.test.mjs passed
+tdd: computed metadata is refused before running a workflow — red: AssertionError [ERR_ASSERTION]: Missing expected rejection. — green: node tests/metadata-parity.test.mjs passed
+tdd: Claude receives orchestration instructions as system instructions and the task separately — red: + 'You are a subagent spawned by a workflow orchestration script.' - 'TASK_ONLY' — green: node tests/provider-context.test.mjs passed
+tdd: Codex receives orchestration instructions above the task message — red: + 'You are a subagent spawned by a workflow orchestration script.' - 'TASK_ONLY' — green: node tests/provider-context.test.mjs passed
+tdd: Claude custom agents use the trusted registry prompt and workflow return instructions — red: TypeError: agentType is unavailable in cross-agent Autocode — green: node tests/provider-context.test.mjs passed
+tdd: Claude applies custom-agent tool limits and per-call denials — red: + 'Grep', + 'Glob' — green: node tests/provider-context.test.mjs passed
+tdd: Claude receives trusted host instructions and MCP configuration — red: The input did not match the regular expression /HOST_PROJECT_RULE/. — green: node tests/provider-context.test.mjs passed
+tdd: Codex custom agents inherit trusted project instructions — red: TypeError: agentType is unavailable in Codex Autocode — green: node tests/provider-context.test.mjs passed
+tdd: Claude forwards host permission decisions without disabling permission callbacks — red: + undefined - [AsyncFunction: canUseTool] — green: node tests/provider-context.test.mjs passed
+tdd: Claude workspace-write agents can run authorized build and test commands — red: false !== true — green: node tests/provider-context.test.mjs passed
+tdd: custom structured agents receive the recovered custom-agent return suffix — red: The input did not match the regular expression /NOTE: You are running inside a workflow script/. — green: node tests/provider-context.test.mjs passed
+tdd: an omitted per-call provider never hides a changed default provider on replay — red: seed 42: Counterexample: ["codex"] (path "0") — green: node tests/provider-replay.test.mjs passed
+tdd: replay cannot reuse an answer from a different working directory — red: + 'first directory' - 'second directory' — green: node tests/provider-replay.test.mjs passed
+tdd: a stalled agent is cancelled and bounded retries fail visibly — red: AssertionError [ERR_ASSERTION]: Missing expected rejection. — green: node tests/recovery-parity.test.mjs passed
+tdd: skipping an individual agent returns null without cancelling its workflow — red: + result: 'not skipped' - result: null — green: node tests/recovery-parity.test.mjs passed
+tdd: retrying an individual agent replaces its cancelled attempt — red: Error: user-retry — green: node tests/recovery-parity.test.mjs passed
+tdd: a user-skipped agent is shown as skipped rather than failed — red: + 'failed' - 'skipped' — green: node tests/recovery-parity.test.mjs passed
+tdd: stall retries cannot launch after reported usage exhausts the budget — red: Error: Workflow agent stalled: no progress — green: node tests/recovery-parity.test.mjs passed
+tdd: a terminal provider failure returns null and leaves the workflow running — red: Error: model unavailable — green: node tests/recovery-parity.test.mjs passed
+tdd: a host quota wait can release a rate-limited call for retry — red: + null - 'after reset' — green: node tests/recovery-parity.test.mjs passed
+tdd: release accepts only the exact tagged, locked, allowlisted npm tarball — red: unexpected npm package file: scripts/schema.mjs — green: node tests/release.test.mjs passed
+tdd: recovered upstream work invalidates downstream cached answers — red: + 'incomplete summary' - 'complete summary' — green: node tests/replay-divergence.test.mjs passed
+tdd: queued agent options are captured when the call is made — red: + 'integer' - 'string' — green: node tests/replay-parity.test.mjs passed
+tdd: Codex refuses restrictions it cannot enforce instead of silently dropping them — red: AssertionError [ERR_ASSERTION]: Missing expected rejection. — green: node tests/restriction-parity.test.mjs passed
+tdd: workflow options cannot silently request an unsupported capability — red: AssertionError [ERR_ASSERTION]: Missing expected rejection. — green: node tests/restriction-parity.test.mjs passed
+tdd: Codex refuses a host permission policy it cannot consult — red: AssertionError [ERR_ASSERTION]: Missing expected rejection. — green: node tests/restriction-parity.test.mjs passed
+tdd: Codex enforces Bash denial through its native command-tool switch — red: TypeError: disallowedTools: Codex SDK adapter cannot enforce this restriction — green: node tests/restriction-parity.test.mjs passed
+tdd: structured results must satisfy the requested schema before returning to the workflow — red: AssertionError [ERR_ASSERTION]: Missing expected rejection. — green: node tests/schema-parity.test.mjs passed
+tdd: Codex preserves an omitted optional property through its strict transport schema — red: TypeError: Codex structured output requires every property; use a nullable type for optional values — green: node tests/schema-parity.test.mjs passed
+tdd: Claude repairs a schema-invalid result before returning it to the workflow — red: TypeError: schema validation failed: data/answer must be integer — green: node tests/schema-parity.test.mjs passed
+tdd: Codex repairs a schema-invalid result and includes repair tokens — red: SyntaxError: Unexpected token 'o', "not JSON" is not valid JSON — green: node tests/schema-parity.test.mjs passed
+tdd: an impossible closed object schema is rejected before starting a provider — red: Error: provider must not start — green: node tests/schema-parity.test.mjs passed
+tdd: reported tokens from a failed call still consume the workflow budget — red: 0 !== 7 — green: node tests/usage-parity.test.mjs passed
+tdd: resume retains spent output tokens without charging cached answers twice — red: 0 !== 7 — green: node tests/usage-parity.test.mjs passed
+tdd: CLI status includes reported usage from failed calls — red: 0 !== 7 — green: node tests/usage-parity.test.mjs passed
+tdd: a worktree agent can edit without changing the main working copy — red: + 'edited' - 'original' — green: node tests/worktree-parity.test.mjs passed
+tdd: worktree setup failures preserve the original actionable Git error — red: Error: spawn git ENOENT — green: node tests/worktree-parity.test.mjs passed
+tdd: ignored files created by an agent are retained rather than deleted during cleanup — red: 0 !== 1 — green: node tests/worktree-parity.test.mjs passed
+tdd: committed agent changes are retained even when the worktree is clean — red: 0 !== 1 — green: node tests/worktree-parity.test.mjs passed
+tdd: unacknowledged cancellation preserves the worktree even when it still looks clean — red: 0 !== 1 — green: node tests/worktree-parity.test.mjs passed
+tdd: repeated parallel blocks preserve replay results — red not observed (fix preceded sf-tdd adoption)
+tdd: repeated pipeline blocks preserve replay results — red not observed (fix preceded sf-tdd adoption)
+tdd: parallel recovery reuses completed siblings and refreshes downstream work — red: actual ['unfinished','completed','summary'], expected ['unfinished','summary'] — green: node --test tests/replay-interruption.test.mjs passed
+tdd: pipeline recovery reuses completed siblings and refreshes downstream work — red: actual ['unfinished','completed','summary'], expected ['unfinished','summary'] — green: node --test tests/replay-interruption.test.mjs passed
+tdd: explicit file control freezes/resumes/cancels owned tree — red: actual undefined, expected 'file' — green: node --test --test-name-pattern='pause freezes' tests/control.test.mjs passed 2/2
+tdd: file control bounds replies and removes request artifacts — red: seed 20261102 path 0:0 Counterexample [65537], Missing expected rejection — green: node --test tests/control-transport.test.mjs passed
+tdd: Codex rejects unsupported object composition before provider startup — red: Error: provider must not start — green: node --test tests/schema-parity.test.mjs passed
+tdd: required properties accepted by patternProperties remain valid — red: TypeError: unsatisfiable JSON Schema: required property is excluded by additionalProperties:false — green: node --test tests/schema-parity.test.mjs passed
+tdd: Codex refuses boolean subschemas before provider startup — red: Error: provider must not start — green: node --test tests/schema-parity.test.mjs passed
+tdd: Codex refuses object type unions before provider startup — red: Error: provider must not start — green: node --test tests/schema-parity.test.mjs passed
+tdd: required crossed numeric bounds fail preflight — red: Error: provider must not start — green: node --test tests/schema-parity.test.mjs passed
+tdd: Codex refuses unsupported array item schemas before provider startup — red: Error: provider must not start — green: node --test tests/schema-parity.test.mjs passed
+tdd: Claude refuses misspelled built-in denials before starting a provider — red: Missing expected rejection — green: node --test tests/restriction-parity.test.mjs passed 5/5
+tdd: Claude preserves provider completion metadata for degraded response recovery — red: undefined !== 95000 — green: node --test tests/provider-context.test.mjs passed 12/12
+tdd: Claude refuses malformed denial rules that cannot match native tools — red: Missing expected rejection: Read (file) — green: node --test tests/restriction-parity.test.mjs passed 6/6
+tdd: trusted spawn rewrites affect execution and replay identity while forced model wins — red: actual prompt original, expected rewritten one — green: node --test tests/host-context.test.mjs passed 13/13
+tdd: a slow low-token response without a stop reason waits 45 seconds and retries once — red: AssertionError [ERR_ASSERTION]: degraded response must wait before returning (true !== false) — green: node --test tests/throttled-recovery.test.mjs passed
+tdd: a provider-reported lost reply retries and includes its spent tokens — red: TypeError: workflow values must be JSON-serializable — green: node --test tests/lost-reply-recovery.test.mjs passed
+tdd: a throttle retry does not start the separate stalled-response retry loop — red: AssertionError [ERR_ASSERTION]: The input did not match the regular expression /stalled/. Input: '' — green: node --test tests/throttled-recovery.test.mjs passed
+tdd: terminal and unmeasured responses do not enter throttle backoff — red not observed (boundary verification)
+tdd: Claude signals a genuine first response before completion — red: false !== true — green: node --test tests/provider-context.test.mjs passed 13/13
+tdd: trusted spawn hooks receive immutable invocation identity and cancellation signal — red: undefined versus expected workflow identity — green: node --test tests/host-context.test.mjs passed 14/14
+tdd: Claude refuses malformed trusted registry tool restrictions before provider startup — red: Error: provider must not start — green: node --test tests/restriction-parity.test.mjs passed 7/7
+tdd: structured findings retain file and line evidence and deduplicate across finder objects — red: actual [], expected [{description:'Unchecked length reaches buffer read',file:'src/parser.js',line:42}] — green: node --test tests/template-parity.test.mjs passed 6/6
+tdd: same-prefix siblings wait for first response rather than the first completed agent — red: 2 !== 1 — green: node --test tests/prefix-warmup.test.mjs passed
+tdd: Codex marks first model output before a streamed turn completes — red: false !== true — green: node --test tests/codex-response.test.mjs passed
+tdd: Codex decodes tagged object union branches and preserves optional nested fields — red: TypeError: Codex structured output cannot preserve object schema composition — green: node --test tests/schema-parity.test.mjs passed
+tdd: trusted host can withhold workflow prompt from spawn hooks and prevent prompt rewrites — red: actual PRIVATE_TASK, expected withheld placeholder — green: node --test tests/host-context.test.mjs passed 15/15
+tdd: the default no-progress watchdog waits ten minutes before retrying — red: AssertionError [ERR_ASSERTION]: 2 !== 1 — green: node --test tests/watchdog-default.test.mjs passed
+tdd: explicit async stall timeout environment overrides the computed default — red: AssertionError [ERR_ASSERTION]: 1 !== 2 — green: node --test tests/watchdog-default.test.mjs passed
+tdd: stream idle timeout extends the watchdog by five minutes — red: AssertionError [ERR_ASSERTION]: 2 !== 1 — green: node --test tests/watchdog-default.test.mjs passed
+tdd: disabled stream watchdog keeps the fixed ten-minute agent timeout — red: AssertionError [ERR_ASSERTION]: 1 !== 2 — green: node --test tests/watchdog-default.test.mjs passed
+tdd: valid structured responses never enter degraded text backoff — red: structured output must bypass degraded text backoff, false !== true — green: node --test tests/throttled-recovery.test.mjs passed 4/4
+tdd: packaged hooks preserve split UTF-8 session identity — red: seed20261102 path0:0 counterexample [é], expected still on got empty — green: node --test tests/hook-integration.test.mjs tests/hooks.test.mjs passed 9/9
+tdd: Claude reports cumulative input and cache usage across structured repairs — red: 24 !== 36 — green: node --test tests/provider-context.test.mjs tests/failed-provider-usage.test.mjs passed 18/18
+tdd: a revised host prefix does not wait on its previous revision warming — red: 1 !== 2 — green: node --test tests/prefix-warmup.test.mjs passed 4/4
+tdd: Codex tool requests count as model responses before their tools complete — red: false !== true — green: node --test tests/codex-response.test.mjs passed 2/2
+tdd: required string bounds are checked before provider startup — red: seed2601102 path0:0 Counterexample [0] — green: node --test tests/schema-parity.test.mjs passed
+tdd: required array bounds are checked before provider startup — red: seed2601102 path0:0 Counterexample [0] — green: node --test tests/schema-parity.test.mjs passed
+tdd: required integer intervals containing no integer fail before provider startup — red: seed2601102 path0:0 Counterexample [0] — green: node --test tests/schema-parity.test.mjs passed
+tdd: Codex rejects object composition that strict transport cannot preserve before provider startup — red: 'Error: provider must not start' (expected /Codex.*composition/) — green: node --test tests/schema-parity.test.mjs passed
+tdd: schema preflight permits required properties accepted by patternProperties — red: TypeError: unsatisfiable JSON Schema: required property is excluded by additionalProperties:false — green: node --test tests/schema-parity.test.mjs passed
+tdd: Codex rejects boolean subschemas before provider startup instead of erasing them — red: 'Error: provider must not start' (expected /Codex.*boolean/) — green: node --test tests/schema-parity.test.mjs passed
+tdd: Codex rejects object type unions before provider startup — red: 'Error: provider must not start' (expected /Codex.*object type unions/) — green: node --test tests/schema-parity.test.mjs passed
+tdd: schema preflight rejects crossed bounds on required values without rejecting optional impossible values — red: 'Error: provider must not start' (expected /unsatisfiable.*bounds/) — green: node --test tests/schema-parity.test.mjs passed
+tdd: Codex rejects unsupported array item schemas before provider startup — red: 'Error: provider must not start' (expected /Codex.*(boolean|tuple)/) — green: node --test tests/schema-parity.test.mjs passed
+tdd: schema preflight rejects crossed required string bounds — red: seed 2601102, path 0:0, Counterexample: [0] — green: node --test tests/schema-parity.test.mjs passed
+tdd: schema preflight rejects crossed required array bounds — red: seed 2601102, path 0:0, Counterexample: [0] — green: node --test tests/schema-parity.test.mjs passed
+tdd: schema preflight rejects required integer intervals containing no integer — red: seed 2601102, path 0:0, Counterexample: [0] — green: node --test tests/schema-parity.test.mjs passed
+tdd: Codex schema repairs accumulate input and cached input usage across turns — red: actual inputTokens20/cachedInputTokens4, expected inputTokens30/cachedInputTokens6 — green: node --test tests/schema-parity.test.mjs passed
+tdd: same-prefix siblings wait for first response rather than the first completed agent — red: AssertionError 2 !== 1 — green: node --test tests/prefix-warmup.test.mjs passed
+tdd: a revised host prefix does not wait on its previous revision warming — red: AssertionError 1 !== 2 — green: node --test tests/prefix-warmup.test.mjs passed
+tdd: Codex marks first model output before a streamed turn completes — red: AssertionError false !== true — green: node --test tests/codex-response.test.mjs passed
+tdd: Codex tool requests count as model responses before their tools complete — red: AssertionError false !== true — green: node --test tests/codex-response.test.mjs passed
+tdd: skip interrupts throttle backoff — red: skip must interrupt backoff immediately: false !== true — green: node --test tests/recovery-controls.test.mjs passed 3/3
+tdd: skip interrupts quota wait — red: skip must interrupt quota wait immediately: false !== true — green: node --test tests/recovery-controls.test.mjs passed 3/3
+tdd: manual retry retains measured input/cache totals — red: 13 !== 24 — green: node --test tests/recovery-controls.test.mjs passed 3/3
+tdd: typed terminal lost-stream errors retry without losing measured usage — red: Error native stream disconnected — green: node --test tests/lost-reply-recovery.test.mjs tests/throttled-recovery.test.mjs passed 6/6
+tdd: finalized provider overload failures return null and preserve workflow progress — red: Error provider retries exhausted — green: node --test tests/recovery-parity.test.mjs passed 8/8
+tdd: Claude retains API-failure classification for unrecognized assistant error categories — red: validation function expected true, received false — green: node --test tests/failed-provider-usage.test.mjs tests/recovery-parity.test.mjs passed 13/13
+tdd: Codex uses validated JSON text fallback for object intersections and repairs invalid output — red: TypeError: Codex structured output cannot preserve object schema composition with sibling constraints or allOf — green: node --test tests/schema-parity.test.mjs passed
+tdd: Codex streamed provider failures retain their typed recovery metadata — red: The validation function is expected to return "true". Received false; caught Error: quota exhausted — green: node --test tests/codex-response.test.mjs passed
+tdd: Codex closes persistent provider threads after success and provider failure — red: AssertionError 0 !== 1 — green: node --test tests/codex-response.test.mjs passed
+tdd: app-server transport returns native agent text and usage — red: Error: Codex Exec exited with code 1: SyntaxError: Unexpected token 'h', "hello" is not valid JSON — green: node --test tests/codex-app-server.test.mjs passed
+tdd: Codex charges measured failed-turn usage after earlier schema repair usage — red: actual outputTokens2/inputTokens5/cachedInputTokens1, expected outputTokens5/inputTokens12/cachedInputTokens3 — green: node --test tests/codex-response.test.mjs passed
+tdd: Codex uses original JSON semantics for unsupported native assertion keywords — red: AssertionError actual outputSchema object != expected undefined — green: node --test tests/schema-parity.test.mjs passed
+tdd: Codex preserves object literal constraints without applying presence wrappers inside equality — red: seed 2601102, path 0:0, Counterexample: ["const",""] — green: node --test tests/schema-parity.test.mjs passed
+tdd: Codex preserves unconstrained property schemas using JSON text — red: AssertionError actual outputSchema object != expected undefined — green: node --test tests/schema-parity.test.mjs passed
+tdd: unsupported schema assertion dialects fail before provider startup instead of weakening validation — red: AssertionError: Missing expected rejection. — green: node --test tests/schema-parity.test.mjs passed
+tdd: standard email formats are validated and repaired instead of ignored — red: TypeError: invalid JSON Schema: unknown format "email" ignored in schema at path "#/properties/email" — green: node --test tests/schema-parity.test.mjs passed
+tdd: Codex exec failures classify exact API envelopes while retaining measured usage — red: The validation function is expected to return "true". Received false; caught exact model_not_found API envelope — green: node --test tests/codex-response.test.mjs passed
+tdd: app-server transport returns native agent text and usage — red: Error: Codex Exec exited with code 1: SyntaxError: Unexpected token 'h', "hello" is not valid JSON — green: node --test tests/codex-app-server.test.mjs passed
+tdd: native terminal error codes survive the public adapter without message inference — red: validation function expected true; Error: Codex app-server turn did not complete — green: node --test tests/codex-app-server.test.mjs passed
+tdd: cancellation interrupts and closes the native app-server before rejecting — red: native cancellation did not settle (test failed after 1000ms) — green: node --test tests/codex-app-server.test.mjs passed
+tdd: server request IDs do not collide with pending client request IDs — red: TypeError: Cannot read properties of undefined (reading 'thread') — green: node --test tests/codex-app-server.test.mjs passed
+tdd: a native terminal stream disconnect retains its typed lost-reply cause and usage — red: validation function expected true; Error: opaque — green: node --test tests/codex-app-server.test.mjs passed
+tdd: native quota failures carry the authoritative usage snapshot without inferring recovery — red: validation function expected true; Error: opaque quota — green: node --test tests/codex-app-server.test.mjs passed
+tdd: cancellation stops a same-group native descendant that ignores SIGTERM — red: descendant must not continue writing after cancellation acknowledges; '9' !== '1' — green: node --test tests/codex-app-server.test.mjs passed
+tdd: native other errors decode an exact structured API envelope without matching English — red: validation function expected true; Error: {"type":"error","status":400,"error":{"type":"invalid_request_error","message":"opaque provider refusal","code":"model_not_found"}} — green: node --test tests/codex-app-server.test.mjs passed
+tdd: native notification buffering rejects an aggregate byte budget overflow — red: AssertionError [ERR_ASSERTION]: Missing expected rejection. — green: node --test tests/codex-app-server.test.mjs passed
+tdd: cancellation stops a detached native descendant that ignores SIGTERM — red not observed (verification of proc identity tree fix)
+tdd: native schema repairs keep their thread, home, MCP configuration and cumulative usage — red not observed (context preservation verification)
+tdd: native retry notifications and unrelated turns cannot override successful completion — red not observed (authority boundary verification)
+tdd: Claude builtin-only custom agents cannot inherit unrestricted MCP tools — red: disallowedTools mcp__* assertion falsy — green: node --test tests/restriction-parity.test.mjs tests/provider-context.test.mjs passed 22/22
+tdd: independent schema requests can reuse an id with revised constraints — red: TypeError: invalid JSON Schema: schema with key or id "https://schema.example.test/revised-result" already exists — green: node --test tests/schema-parity.test.mjs passed
+tdd: asynchronous schemas fail preflight before any provider can start — red: 'Error: provider must not start' (expected /invalid JSON Schema.*async/) — green: node --test tests/schema-parity.test.mjs passed
+tdd: native threads explicitly receive trusted MCP and feature configuration — red: actual 'missing', expected 'configured' — green: node --test tests/codex-app-server.test.mjs passed
+tdd: native finalized API overload and connection failures retain different failure kinds — red: validation function expected true; Error: opaque failure — green: node --test tests/codex-app-server.test.mjs passed
+tdd: native startup sends CLI overrides using supported dotted key syntax — red: actual 'missing', expected 'configured' — green: node --test tests/codex-app-server.test.mjs passed
+tdd: Claude custom agents use the native root registry to restrict exact MCP tools — red: undefined !== autocode-workflow — green: node --test tests/provider-context.test.mjs tests/restriction-parity.test.mjs passed 23/23
+tdd: Claude routes trusted automatic tools through the host permission callback — red: undefined !== function — green: node --test tests/provider-context.test.mjs passed 16/16
+tdd: Claude rejects malformed host permission policies before provider startup — red: Missing expected rejection — green: node --test tests/restriction-parity.test.mjs passed 9/9
+tdd: typed API envelopes accept nullable or absent API error codes without parsing prose — red: validation function expected true; Error: {"type":"error","status":500,"error":{"type":"server_error","code":null,"message":"opaque"}} — green: node --test tests/codex-app-server.test.mjs tests/codex-response.test.mjs passed (22/22)
+tdd: Codex treats an empty optional command clamp as no restriction — red: TypeError bashCommandClamp: Codex SDK adapter cannot enforce this restriction — green: node --test tests/restriction-parity.test.mjs passed 10/10
+tdd: Claude treats an empty optional command clamp as no restriction — red: TypeError bashCommandClamp: Claude SDK adapter cannot enforce this restriction yet — green: node --test tests/restriction-parity.test.mjs passed 11/11
+tdd: controller metadata becomes visible only as a complete JSON document — red: seed 20261102, path 0:0, Counterexample [524288], Unexpected end of JSON input — green: node --test tests/control-startup.test.mjs tests/background-parity.test.mjs tests/control.test.mjs tests/control-transport.test.mjs passed 13/13; full suite 243/243 passed
+tdd: full task oracle verifies real defects, parallel review and unchanged fixture sources — red: ERR_MODULE_NOT_FOUND — green: node --test tests/full-task-fixture.test.mjs passed
+tdd: parent report requires actual workflow and verifier proof — red: true !== false — green: node --test tests/full-task-fixture.test.mjs passed
+tdd: full-task proof comparison ignores JSON object key order — red: seed 2601102 path 0 Counterexample [["line","file","title","symbol","evidence","reproduction"]] — green: node --test tests/full-task-fixture.test.mjs passed
+tdd: source MCP returns hashed allowlisted bytes and denies escapes and authentication files — red: McpError MCP error -32000: Connection closed — green: node --test tests/full-task-source-mcp.test.mjs passed
+tdd: nested Claude file-control completion does not unlink an uncreated socket — red: actual CLI exit 1 EROFS unlink /tmp/autocode-...sock despite completed agent — green: actual Haiku5.5 nested CLI preflight exit 0 and NESTED_CLAUDE_READY; control suites 11/11 passed

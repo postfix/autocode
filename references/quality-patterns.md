@@ -30,7 +30,7 @@ Do not add a barrier merely to flatten, map, or filter an item's result. Do thos
 
 **Completeness critic.** Before reporting an exhaustive result, ask a final agent which modalities were skipped, which claims remain unverified, and which sources or files were unreadable. Feed concrete gaps into another bounded round. Report gaps that cannot be closed.
 
-**Scale and budget.** Size the finder pool and verification votes to the user's request. A quick check needs fewer calls than a comprehensive audit. `budget.total` is an optional *output-token* target in this runner, not Claude's turn-wide hard ceiling. Guard budget loops with `budget.total !== null`; otherwise `budget.remaining()` is infinite. Concurrent calls can exceed the target before new calls stop. Respect the runner's 16-concurrent-agent, 1000-agent total, and 4096-item-per-call limits. If you sample, truncate, or skip retries, log the omitted scope.
+**Scale and budget.** Size the finder pool and verification votes to the user's request. A quick check needs fewer calls than a comprehensive audit. `budget.total` is an optional output-token admission target. A trusted host can supply a shared turn ledger; standalone runs count runner-owned reported usage. Guard budget loops with `budget.total !== null`; otherwise `budget.remaining()` is infinite. Concurrent calls can exceed the target before new calls stop. Respect the runner's 16-concurrent-agent, 1000-agent total, and 4096-item-per-call limits. If you sample, truncate, or skip retries, log the omitted scope.
 
 For a fixed target, stop on the count and inspect failures before deciding whether to repeat:
 
@@ -51,7 +51,7 @@ For an output-token target, check `budget.total !== null && budget.remaining() >
 
 ## Worked workflow: review with skeptical verification
 
-The packaged [review-and-verify template](../assets/templates/review-and-verify.js) is executable. It sends each topic to a finder and immediately verifies that topic's findings. It returns only findings with a positive structured verdict. Use an additional independent verdict per finding when the user requests stronger confidence. The [exhaustive-review template](../assets/templates/exhaustive-review.js) combines repeated discovery, deduplication, three verification lenses, and a completeness check.
+The packaged [review-and-verify template](../assets/templates/review-and-verify.js) is executable. It sends each topic to a finder and immediately verifies that topic's findings. It returns only findings with a positive structured verdict. Use an additional independent verdict per finding when the user requests stronger confidence. The [exhaustive-review template](../assets/templates/exhaustive-review.js) combines repeated discovery, deduplication, three verification lenses, and a completeness check that feeds concrete gaps into another bounded discovery round. Unresolved gaps are returned explicitly.
 
 For global deduplication, a barrier is appropriate:
 
@@ -115,7 +115,7 @@ An `agent()` result is data returned to its workflow script. Ask for the exact o
 | Keyword reminder | Explicit `$autocode` or workflow requests activate the skill. The optional plugin hook also scans qualifying human prompts for `ultracode` and injects a one-turn reminder. |
 | Full enter, sparse continued, and exit reminders | The optional Codex/Claude plugin hook persists `autocode on` mode per session, emits a full entry reminder, a sparse reminder after ten human turns or on resume, and an exit reminder for `autocode off`. Skill-only installs have no session hook. |
 | Shared subagent authority note (`jn`) | Workflow-computed tasks are followed within the usual instruction hierarchy and permissions. |
-| Default text prompt (`Hs`) and custom-agent text suffix (`Js`) | Both SDK adapters instruct direct data returns; `agentType` is explicitly unsupported. |
+| Default text prompt (`Hs`) and custom-agent text suffix (`Js`) | Both SDK adapters apply the preserved return contracts; custom types resolve from the trusted host registry, subject to provider capability checks. |
 | Structured-output prompt (`zs`) and custom-agent suffix (`Ks`) | Both adapters request root-object structured output through native SDK options; no `StructuredOutput` tool call is used. |
 | Worked examples and quality patterns | The sections above plus packaged runnable templates. |
 

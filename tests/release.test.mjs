@@ -11,7 +11,9 @@ const packageJson = { name: 'autocode-skill', version: '0.1.1' };
 const lock = { name: 'autocode-skill', version: '0.1.1',
   packages: { '': { name: 'autocode-skill', version: '0.1.1' } } };
 const paths = ['package.json', 'LICENSE', 'README.md', 'INSTALL.md', 'USAGE.md',
-  'docs/PROSE-DIFF.md', 'hooks/autocode-mode.cjs', 'hooks/claude-codex-hooks.json',
+  'docs/PROSE-DIFF.md',
+  'docs/PARITY-STATUS.json', 'docs/REMAINING-PARITY-BACKEND.md', 'docs/AUTO-01-HANDOFF.md', 'docs/RECOVERY-PARITY-EVIDENCE.md', 'docs/SCHEMA-PARITY-EVIDENCE.md', 'evals/README.md', 'evals/live-skill.mjs',
+  'evals/full-task-fixture.mjs', 'evals/full-task-codex.mjs', 'evals/full-task-claude.mjs', 'evals/full-task-source-mcp.mjs', 'evals/full-task-results-2026-11-02.json', 'evals/RESULTS.md', 'evals/parity-tdd.log', 'evals/live-parity-2026-11-02.json', 'hooks/autocode-mode.cjs', 'hooks/claude-codex-hooks.json',
   '.codex-plugin/plugin.json', '.claude-plugin/plugin.json',
   '.claude-plugin/marketplace.json', '.agents/plugins/marketplace.json',
   'SKILL.md', 'agents/openai.yaml', 'references/authoring.md', 'references/quality-patterns.md',
@@ -24,7 +26,7 @@ const paths = ['package.json', 'LICENSE', 'README.md', 'INSTALL.md', 'USAGE.md',
   'assets/templates/parallel-scout.js', 'assets/templates/review-and-verify.js',
   'assets/templates/exhaustive-review.js', 'assets/templates/mixed-provider.js', 'scripts/autocode.mjs',
   'scripts/claude-adapter.mjs', 'scripts/codex-adapter.mjs', 'scripts/runtime.mjs',
-  'scripts/subagent-prompt.mjs', 'scripts/run-control.mjs', 'scripts/run-stats.mjs'];
+  'scripts/subagent-prompt.mjs', 'scripts/schema.mjs', 'scripts/codex-app-server.mjs', 'scripts/run-control.mjs', 'scripts/run-stats.mjs'];
 const pack = { name: 'autocode-skill', version: '0.1.1',
   files: paths.map(path => ({ path })) };
 

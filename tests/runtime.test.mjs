@@ -170,8 +170,9 @@ test('parallel preserves order, caps concurrent agents, and reports failed slots
   let active = 0, peak = 0;
   try {
     const script = '/* autocode {"name":"fanout","description":"Run independent tasks"} */\nreturn await parallel([()=>agent("a"),()=>agent("b"),()=>agent("c"),()=>{throw Error("boom")}]);';
-    const output = await runWorkflow({ script, runDir, concurrency: 2, agent: async (prompt) => {
+    const output = await runWorkflow({ script, runDir, concurrency: 2, agent: async (prompt, _options, context) => {
       active++; peak = Math.max(peak, active);
+      context.onResponse();
       await new Promise((resolve) => setTimeout(resolve, prompt === 'a' ? 15 : 2));
       active--;
       return { result: prompt, outputTokens: 1 };

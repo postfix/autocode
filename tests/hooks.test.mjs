@@ -58,3 +58,10 @@ test('Codex and Claude hook commands emit their host-specific context', async ()
     /Autocode is on/);
   assert.match(formatOutput('UserPromptSubmit', message, false), /Autocode is on/);
 });
+
+test('standing reminders retain the recovered exhaustive-quality instructions',()=>{
+ const {message}=transition('UserPromptSubmit',{prompt:'autocode on',source:'user'});
+ assert.match(message,/token cost is not a constraint/);
+ assert.match(message,/Respect explicit user budgets/);
+ assert.match(message,/references\/source-prompts\/authoring\.md/);
+});

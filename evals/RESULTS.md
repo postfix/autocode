@@ -1,3 +1,32 @@
+# Corrected native-platform result — 2026-11-02
+
+The actual native Codex environment also passed without MCP file access. A fresh Luna agent read the current skill, authored the workflow, executed the actual CLI using the normal approved-command path, and returned the verifier's report. All three delegates remained read-only and used forced `gpt-6-luna`. The independent hidden oracle verified all four defects, no false positives, unchanged source, parallel reviewers followed by skeptical verification, and matching verifier/workflow/parent reports. Native command/file-tool execution is recorded in the journal.
+
+The first restricted CLI initialization failed; the normal authorized execution succeeded. Both are retained in `.scratch/full-task-native-codex/run-6kIf7a/execution-receipt.json`; the independently graded result is `.scratch/full-task-native-codex/result.json`.
+
+**Current platform results:** native Codex/Luna passed without MCP, and Claude/Haiku 5.5 passed with native Read. The earlier SDK-parent harness forced `approvalPolicy: never` inside another sandbox. Its failure and MCP workaround are separate experiments, not the baseline native Codex result. Describing that workaround as the only Codex pass was misleading.
+
+[Updated machine-readable results](full-task-results-2026-11-02.json).
+
+---
+
+# Full integrated task results — 2026-11-02
+
+Both requested platforms completed a single-parent author-and-execute task using the current skill and actual CLI. The fixture is a seven-module billing/cart repository with a product specification, four known defects and two correct decoys. Two independent reviewers run in parallel, followed by skeptical verification. A hidden oracle executes every reported counterexample and checks original source hashes and agreement between verifier, workflow and parent reports.
+
+| Platform/model | Outcome | Verified defects | False positives | Real delegates | Source unchanged |
+| --- | --- | --- | --- | --- | --- |
+| Codex / `gpt-6-luna` | Passed using read-only MCP file access | 4/4 | 0 | 3 | Yes |
+| Claude / `claude-haiku-5-5` | First blind task passed with native Read | 4/4 | 0 | 3 | Yes |
+
+Luna's first native-Bash attempt failed: the pinned Codex engine masks its daemon rendezvous directory inside the parent sandbox, preventing child command tools from reading files. That failed attempt remains recorded. The second attempt used existing MCP forwarding with an allowlisted read-only source reader, 21 real file reads with matching hashes, the same Luna model and unchanged sandboxes. No oracle answers or quality feedback were supplied. This does not establish that nested native Bash works.
+
+Claude's separate infrastructure probes found a harmless exit-status suffix rejected by the evaluation command policy and a real CLI cleanup bug on read-only `/tmp`. The policy now accepts finite benign command forms; cleanup only removes sockets actually created. Both original failures remain preserved. After the probes, the first blind task passed without quality retries. Parent API messages report Haiku 5.5; delegate selection is verified by forced configuration and journal records, without independent retained delegate API transcripts.
+
+[Machine-readable results and evidence paths](full-task-results-2026-11-02.json). These are bounded functional evaluations, not exhaustive production-repository coverage or a speed/cost comparison.
+
+---
+
 # Skill eval results
 
 Run date: 2026-10-25. Source version: Autocode 0.1.1 release candidate in this checkout.

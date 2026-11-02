@@ -42,6 +42,7 @@ export async function readRunStatus(directory) {
       for(const call of agents.values())if(['queued','running'].includes(call.state)){call.state='interrupted';call.endedAt=event.time;}
       result.state='running';startedAt??=event.time;endedAt=null;result.attemptId=event.attemptId;result.concurrency=event.concurrency;result.phases=event.phases??[];
     }
+    if(event.type==='notification-failed'){result.errorCount++;(result.notificationErrors??=[]).push(safeText(event.message));}
     if(event.type==='phase'){result.phase=safeText(event.title,160);if(!result.phases.some(p=>p.title===result.phase))result.phases.push({title:result.phase});}
     if(event.type==='run-finished'){result.state='completed';endedAt=event.time;result.failures=(event.failures??[]).map(x=>safeText(x));}
     if(event.type==='run-failed'){result.state='failed';endedAt=event.time;result.error=safeText(event.message);result.errorCount++;}
@@ -56,11 +57,15 @@ export async function readRunStatus(directory) {
     }
     const call=agents.get(id);
     if(event.type==='agent-finished') {
+      if(event.usageIncomplete)result.usageIncomplete=true;
       result.outputTokens+=event.outputTokens;
       for(const field of ['inputTokens','cachedInputTokens'])if(Number.isSafeInteger(event[field]))result[field]=(result[field]??0)+event[field];
       if(call)Object.assign(call,{state:'completed',endedAt:event.time,outputTokens:event.outputTokens,inputTokens:event.inputTokens??null,cachedInputTokens:event.cachedInputTokens??null});
     }
-    if(event.type==='failed'){result.errorCount++;result.usageIncomplete=true;if(call)Object.assign(call,{state:'failed',endedAt:event.time,error:safeText(event.message)});}
+    if(['failed','skipped'].includes(event.type)){
+      if(Number.isSafeInteger(event.outputTokens)&&event.outputTokens>=0){result.outputTokens+=event.outputTokens;if(call)call.outputTokens=event.outputTokens;}
+      for(const field of ['inputTokens','cachedInputTokens'])if(Number.isSafeInteger(event[field]))result[field]=(result[field]??0)+event[field];
+      if(event.type==='failed')result.errorCount++;result.usageIncomplete=true;if(call)Object.assign(call,{state:event.type==='skipped'?'skipped':'failed',endedAt:event.time,error:safeText(event.message)});}
     if(event.type==='activity') {
       if(event.status==='failed')result.errorCount++;
       if(call){const entry={tool:safeText(event.tool,100),status:event.status,exitCode:event.exitCode??null,message:safeText(event.message),time:event.time};const old=event.id?call.activity.findIndex(x=>x.id===event.id):-1;if(event.id)entry.id=event.id;if(old>=0)call.activity[old]=entry;else call.activity.push(entry);call.activity=call.activity.slice(-20);}
@@ -95,6 +100,7 @@ export function formatStatus(run) {
   const rows=[`${run.name} — ${safeText(run.state)} (${safeText(run.runId??'not started')})`,`Elapsed ${duration(run.elapsedMs)} · output ${run.outputTokens} tokens · input ${run.inputTokens??'unknown'} · cached input ${run.cachedInputTokens??'unknown'} · recorded errors ${run.errorCount}`,`Run directory: ${safeText(run.runDir)}`];
   if(run.phase)rows.push(`Phase: ${run.phase}`);
   if(run.phases.length)rows.push(`Phases: ${run.phases.map(p=>safeText(p.title,160)).join(' → ')}`);
+  for(const error of run.notificationErrors??[])rows.push(`Notification error: ${error}`);
   if(run.error)rows.push(`Error: ${run.error}`);
   if(run.controlError)rows.push(`Control error: ${run.controlError}`);
   if(run.persistenceError)rows.push(`State save failed: ${run.persistenceError}`);

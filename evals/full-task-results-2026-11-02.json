@@ -1,0 +1,88 @@
+{
+  "date": "2026-11-02",
+  "task": "Single parent authors and executes a multi-agent review of a seven-module billing/cart repository; hidden executable oracle verifies four defects and rejects two correct decoys.",
+  "fixture_sha256": "4840ecd3002018baf277ad1b9f8456703f7e9603c044ded9117c44ad140cee63",
+  "codex": {
+    "model": "gpt-6-luna",
+    "passed": true,
+    "parent": "Actual native Codex Luna agent /root/native_codex_eval",
+    "route": "Normal approved CLI execution; native command/file access; no source MCP",
+    "checks": {
+      "matched": 4,
+      "missing": 0,
+      "false_positives": 0,
+      "source_unchanged": true,
+      "parallel_reviewers": true,
+      "verified_after_reviews": true,
+      "completed_delegates": 3,
+      "parent_workflow_verifier_agree": true
+    },
+    "completed_native_commands": 5,
+    "requested_delegate_models": [
+      "gpt-6-luna"
+    ],
+    "evidence": ".scratch/full-task-native-codex/result.json",
+    "execution_receipt": ".scratch/full-task-native-codex/run-6kIf7a/execution-receipt.json",
+    "initial_attempt": "CLI initialization failed in restricted tool environment; normal authorized command rerun succeeded, preserving read-only delegate sandboxes."
+  },
+  "claude": {
+    "model": "claude-haiku-5-5",
+    "passed": true,
+    "route": "native Read tools",
+    "passing_blind_task_attempt": 1,
+    "checks": {
+      "matched": 4,
+      "missing": 0,
+      "false_positives": 0,
+      "source_unchanged": true,
+      "parallel_reviewers": true,
+      "verified_after_reviews": true,
+      "completed_delegates": 3,
+      "parent_workflow_verifier_agree": true
+    },
+    "parent_api_reported_models": [
+      "claude-haiku-5-5"
+    ],
+    "delegate_model_verification": "Forced canonical model configuration and journal metadata; separate delegate API-reported transcripts unavailable.",
+    "evidence": ".scratch/full-task-claude/attempt-QMcKTM/evidence.json",
+    "model_receipt": ".scratch/full-task-claude/actual-model-receipt.json",
+    "preflight_failures": [
+      "Exact-command permission harness rejected a benign exit-status suffix; finite approved command forms updated.",
+      "Nested CLI cleanup attempted unlink of never-created socket on read-only /tmp; product cleanup now checks actual socket creation."
+    ],
+    "parent_host_policy_denials": 2,
+    "parent_host_policy_note": "Parent adapted after two benign actions were denied by the evaluation allowlist; these were not API or workflow failures."
+  },
+  "limits": [
+    "Bounded review task with known ground truth, not exhaustive production-repository coverage.",
+    "Earlier SDK-parent experiments forced approvalPolicy:never in a nested sandbox; their native Bash failure and MCP workaround are recorded separately from the actual native Codex evaluation.",
+    "These runs verify functional outcomes, not statistically controlled speed/cost rankings."
+  ],
+  "codex_sdk_parent_experiments": {
+    "model": "gpt-6-luna",
+    "passed": true,
+    "route": "read-only MCP project-file access",
+    "passing_attempt": 2,
+    "first_attempt": {
+      "passed": false,
+      "route": "nested native Bash",
+      "classification": "infrastructure: pinned Codex masks /tmp/codex-daemon-1000 to mode 000 inside outer sandbox; delegated file commands failed",
+      "evidence": ".scratch/full-task-codex/run-qTwJup/evaluation.json"
+    },
+    "checks": {
+      "matched": 4,
+      "missing": 0,
+      "false_positives": 0,
+      "source_unchanged": true,
+      "parallel_reviewers": true,
+      "verified_after_reviews": true,
+      "completed_delegates": 3,
+      "parent_workflow_verifier_agree": true
+    },
+    "actual_hashed_source_reads": 21,
+    "recorded_session_models": [
+      "gpt-6-luna"
+    ],
+    "evidence": ".scratch/full-task-codex/run-If9MKK/evaluation.json"
+  }
+}

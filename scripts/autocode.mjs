@@ -1,11 +1,12 @@
 #!/usr/bin/env node
+import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { existsSync, realpathSync } from 'node:fs';
-import { readFile, readdir } from 'node:fs/promises';
+import { readFile, readdir, mkdir, open } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createInterface } from 'node:readline/promises';
-import { runWorkflow } from './runtime.mjs';
+import { runWorkflow, workflowMetadata, exportWorkflowJournal, importWorkflowJournal } from './runtime.mjs';
 import { codexAgent } from './codex-adapter.mjs';
 import { claudeAgent } from './claude-adapter.mjs';
 import { readRunStatus, formatStatus, safeText } from './run-stats.mjs';
@@ -16,19 +17,21 @@ function parseRun(argv) {
     throw new Error('usage: autocode run <script.js> [--provider codex|claude] [options]');
   const scriptPath = resolve(argv[1]);
   const flags = {};
-  for (let i = 2; i < argv.length; i += 2) {
+  for (let i = 2; i < argv.length; i++) {
+    if (argv[i] === '--background') { flags.background = true; continue; }
     if (!argv[i]?.startsWith('--') || argv[i + 1] === undefined) throw new Error(`invalid option: ${argv[i]}`);
-    flags[argv[i].slice(2)] = argv[i + 1];
+    const name = argv[i].slice(2);
+    flags[name] = argv[++i];
   }
   for (const name of Object.keys(flags))
-    if (!['args', 'run-dir', 'resume', 'budget', 'sandbox', 'codex', 'claude', 'provider', 'cwd'].includes(name))
+    if (!['args', 'run-dir', 'resume', 'budget', 'sandbox', 'codex', 'claude', 'provider', 'cwd', 'context', 'background'].includes(name))
       throw new Error(`unknown option: --${name}`);
   const provider = flags.provider ?? 'codex';
   if (!['codex', 'claude'].includes(provider)) throw new Error(`unknown provider: ${provider}`);
   const cwd = resolve(flags.cwd ?? process.cwd());
   const worker = process.env.AUTOCODE_WORKER === '1' && process.send && process.connected;
-  const runId = flags.resume ?? (worker ? process.env.AUTOCODE_RUN_ID || undefined : undefined) ?? `wf_${randomUUID()}`;
-  const runDir = flags['run-dir'] ? resolve(flags['run-dir']) : join(cwd, '.codex/autocode-runs', runId);
+  const runId = flags.resume ?? process.env.AUTOCODE_LAUNCH_ID ?? (worker ? process.env.AUTOCODE_RUN_ID || undefined : undefined) ?? `wf_${randomUUID()}`;
+  const runDir = flags['run-dir'] ? resolve(flags['run-dir']) : join(cwd, '.autocode/runs', runId);
   const args = flags.args === undefined ? undefined : JSON.parse(flags.args);
   const budget = flags.budget === undefined ? null : Number(flags.budget);
   const sandbox = flags.sandbox ?? 'read-only';
@@ -37,9 +40,11 @@ function parseRun(argv) {
 
 const terminal = new Set(['completed','failed','cancelled']);
 async function projectRuns() {
-  const project=realpathSync(process.cwd()),root=join(project,'.codex/autocode-runs');
-  const entries=await readdir(root,{withFileTypes:true}).catch(error=>{if(error.code==='ENOENT')return [];throw error;});
+  const project=realpathSync(process.cwd());
   const directories=new Map();
+  for (const location of ['.autocode/runs', '.codex/autocode-runs']) {
+  const root=join(project,location);
+  const entries=await readdir(root,{withFileTypes:true}).catch(error=>{if(error.code==='ENOENT')return [];throw error;});
   for(const entry of entries) {
     if(entry.isDirectory()){
       const directory=realpathSync(join(root,entry.name));
@@ -55,6 +60,7 @@ async function projectRuns() {
       if(owner.project!==project||owner.runId!==id)throw Error('project workflow registration does not match its controller');
       directories.set(directory,id);
     }
+  }
   }
   const runs=[];
   for(const [directory,id] of directories) {
@@ -72,7 +78,40 @@ function formatRuns(runs) {
 function formatSelection(result) {return `${formatRuns(result.workflows)}\n${result.question}`;}
 
 export async function runAutocode(argv, adapters = { codex: codexAgent, claude: claudeAgent }) {
-  if(['ps','status','pause','resume','cancel'].includes(argv[0])) {
+  if (['export','import'].includes(argv[0])) {
+    const flags = {};
+    for (let index = 1; index < argv.length; index += 2) {
+      if (!['--run-dir','--to','--from'].includes(argv[index]) || argv[index + 1] === undefined) throw new Error('journal transfer needs --run-dir and --to or --from');
+      flags[argv[index].slice(2)] = argv[index + 1];
+    }
+    if (!flags['run-dir'] || (argv[0] === 'export' ? !flags.to || flags.from : !flags.from || flags.to)) throw new Error('journal transfer needs --run-dir and --to or --from');
+    return argv[0] === 'export' ? exportWorkflowJournal(flags['run-dir'], flags.to) : importWorkflowJournal(flags.from, flags['run-dir']);
+  }
+  if (argv[0] === 'workflows') {
+    let cwd = process.cwd(), contextFile, json = false;
+    for (let index = 1; index < argv.length; index++) {
+      if (argv[index] === '--json') json = true;
+      else if (argv[index] === '--cwd' && argv[index + 1]) cwd = resolve(argv[++index]);
+      else if (argv[index] === '--context' && argv[index + 1]) contextFile = resolve(argv[++index]);
+      else throw new Error(`unknown workflow discovery option: ${argv[index]}`);
+    }
+    const context = contextFile ? JSON.parse(await readFile(contextFile, 'utf8')) : {};
+    const catalog = new Map(Object.entries(context.workflows ?? {}).map(([reference, source]) => [reference, { source }]));
+    if (!context.namedWorkflowsOnly) {
+      const directory = join(cwd, '.codex', 'workflows');
+      const entries = await readdir(directory, { withFileTypes: true }).catch(error => { if (error.code === 'ENOENT') return []; throw error; });
+      for (const entry of entries) if (entry.isFile() && entry.name.endsWith('.js')) {
+        const reference = entry.name.slice(0, -3);
+        if (!catalog.has(reference)) {
+          const scriptPath = join(directory, entry.name);
+          catalog.set(reference, { source: await readFile(scriptPath, 'utf8'), scriptPath });
+        }
+      }
+    }
+    const entries = [...catalog.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([reference, { source, scriptPath }]) => ({ ...workflowMetadata(source), reference, ...(scriptPath ? { scriptPath } : {}) }));
+    return json ? entries : entries.map(entry => `${entry.reference}: ${entry.name} — ${entry.description}${entry.whenToUse ? ` (${entry.whenToUse})` : ''}`).join('\n');
+  }
+  if(['ps','status','pause','resume','cancel','skip','retry'].includes(argv[0])) {
     const flags={};
     for(let i=1;i<argv.length;i++) {
       if(argv[i]==='--json')flags.json=true;
@@ -87,7 +126,8 @@ export async function runAutocode(argv, adapters = { codex: codexAgent, claude: 
       const runs=(await projectRuns()).filter(run=>!terminal.has(run.state));
       return flags.json?runs:formatRuns(runs);
     }
-    if(flags.agent&&argv[0]!=='status')throw Error('--agent is only available for status; controls apply to the entire workflow');
+    if (['skip','retry'].includes(argv[0]) && !flags.agent) throw Error('agent controls require --agent <id>');
+    if(flags.agent&&!['status','skip','retry'].includes(argv[0]))throw Error('--agent is only available for status; controls apply to the entire workflow');
     if(!flags.directory) {
       const runs=await projectRuns();
       const candidates=flags.id?runs.filter(run=>run.runId===flags.id):runs.filter(run=>!terminal.has(run.state));
@@ -98,7 +138,7 @@ export async function runAutocode(argv, adapters = { codex: codexAgent, claude: 
       flags.directory=candidates[0].runDir;
     }
     if(argv[0]!=='status'){
-      const result=await controlRun(flags.directory,argv[0]);
+      const result=await controlRun(flags.directory,argv[0],{agent:flags.agent});
       return flags.json?result:`${result.state}: ${safeText(result.runId??result.runDir)}${result.persistenceError?` (state save failed: ${result.persistenceError})`:''}`;
     }
     const result=await readRunStatus(flags.directory);
@@ -108,7 +148,18 @@ export async function runAutocode(argv, adapters = { codex: codexAgent, claude: 
   const {scriptPath,flags,provider,cwd,runDir,runId,args,budget,sandbox}=parseRun(argv);
   const result = await runWorkflow({
     script: await readFile(scriptPath, 'utf8'), args, runDir, budget,
-    defaultProvider:provider,
+    defaultProvider:provider, cwd,
+    executionContext: { sandbox, codex: flags.codex ?? null, claude: flags.claude ?? null },
+    hostContext: flags.context ? JSON.parse(await readFile(resolve(flags.context), 'utf8')) : undefined,
+    subscribeControls: process.send ? handler => {
+      const listener = message => {
+        if (message?.type !== 'agent-control') return;
+        try { handler(message); process.send?.({type:'agent-control-result',requestId:message.requestId}); }
+        catch(error) { process.send?.({type:'agent-control-result',requestId:message.requestId,error:safeText(error.message)}); }
+      };
+      process.on('message', listener);
+      return () => process.removeListener('message', listener);
+    } : undefined,
     initialRunId:runId,
     resumeFromRunId: flags.resume,
     onProgress: (event) => process.stderr.write(event.type === 'phase' ?
@@ -120,7 +171,7 @@ export async function runAutocode(argv, adapters = { codex: codexAgent, claude: 
       const selected = opts.provider ?? provider;
       if (!['codex', 'claude'].includes(selected)) throw new Error(`unknown provider: ${selected}`);
       return adapters[selected](prompt, { ...opts, sandbox }, {
-        ...context, cwd, executable: selected === 'codex' ? flags.codex : flags.claude,
+        ...context, cwd:context.cwd??cwd, executable: selected === 'codex' ? flags.codex : flags.claude,
       });
     },
   });
@@ -132,6 +183,31 @@ if (process.argv[1] && existsSync(process.argv[1]) &&
   const argv=process.argv.slice(2);
   const main=async()=>{
     const worker=process.env.AUTOCODE_WORKER==='1'&&!!process.send&&process.connected;
+    if (argv[0] === 'run' && !worker && argv.includes('--background')) {
+      if (process.platform !== 'linux') throw Error('background workflows currently require Linux');
+      const { runDir, runId } = parseRun(argv);
+      await mkdir(runDir, { recursive: true });
+      const out = await open(join(runDir, 'stdout.log'), 'a', 0o600);
+      const err = await open(join(runDir, 'stderr.log'), 'a', 0o600);
+      let daemon;
+      try {
+        daemon = spawn(process.execPath, [fileURLToPath(import.meta.url), ...argv.filter(value => value !== '--background'), '--run-dir', runDir],
+          { detached: true, stdio: ['ignore', out.fd, err.fd], env: { ...process.env, AUTOCODE_LAUNCH_ID: runId } });
+        await new Promise((resolve, reject) => { daemon.once('spawn', resolve); daemon.once('error', reject); });
+      } finally { await out.close(); await err.close(); }
+      daemon.unref();
+      for (let attempt = 0; attempt < 1000; attempt++) {
+        const state = await readFile(join(runDir, 'control.json'), 'utf8').then(JSON.parse).catch(error => { if (error.code === 'ENOENT') return null; throw error; });
+        if (state?.runId === runId && ['running', 'completed', 'failed'].includes(state.state)) {
+          process.stdout.write(JSON.stringify({ runId, runDir, state: state.state }) + '\n');
+          return;
+        }
+        if (daemon.exitCode !== null) throw Error(safeText(await readFile(join(runDir, 'stderr.log'), 'utf8')) || 'background launch failed');
+        await new Promise(resolve => setTimeout(resolve, 10));
+      }
+      daemon.kill('SIGTERM');
+      throw Error('background workflow did not become ready');
+    }
     if(argv[0]==='run'&&!worker&&process.platform==='linux'){
       const {runDir,runId,provider,cwd}=parseRun(argv);
       const workerArgs=[...argv,'--run-dir',runDir];

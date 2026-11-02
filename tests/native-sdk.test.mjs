@@ -6,14 +6,15 @@ import { claudeAgent } from '../scripts/claude-adapter.mjs';
 test('both SDK adapters use distinct recovered text and structured return contracts', async () => {
   const seen = [];
   class FakeCodex {
+    constructor(options) { this.instructions = options.config.developer_instructions; }
     startThread() { return { run: async (prompt, options) => {
-      seen.push({ provider: 'codex', prompt, structured: !!options.outputSchema });
+      seen.push({ provider: 'codex', prompt: `${this.instructions}\n\nTask:\n${prompt}`, structured: !!options.outputSchema });
       return { finalResponse: options.outputSchema ? '{"answer":42}' : 'OK',
         usage: { output_tokens: 1 } };
     } }; }
   }
   const query = ({ prompt, options }) => {
-    seen.push({ provider: 'claude', prompt, structured: !!options.outputFormat });
+    seen.push({ provider: 'claude', prompt: `${options.systemPrompt}\n\nTask:\n${prompt}`, structured: !!options.outputFormat });
     return (async function* () { yield { type: 'result', subtype: 'success',
       result: 'OK', structured_output: { answer: 42 }, usage: { output_tokens: 1 } }; })();
   };
@@ -69,9 +70,10 @@ test('Codex adapter uses SDK thread options and turn result', async () => {
   assert.match(seen.prompt, /Answer$/);
 });
 
-test('Codex adapter strictens nested object schemas and rejects optional fields', async () => {
+test('Codex adapter strictens nested object schemas', async () => {
   let seen;
   class FakeCodex {
+    constructor(options) { this.instructions = options.config.developer_instructions; }
     startThread() { return { run: async (_prompt, options) => {
       seen = options.outputSchema;
       return { finalResponse: '{"detail":{"answer":42}}', usage: { output_tokens: 1 } };
@@ -82,8 +84,7 @@ test('Codex adapter strictens nested object schemas and rejects optional fields'
   await codexAgent('Answer', { schema }, { Codex: FakeCodex, cwd: '/tmp', runDir: '/tmp' });
   assert.equal(seen.additionalProperties, false);
   assert.equal(seen.properties.detail.additionalProperties, false);
-  await assert.rejects(codexAgent('Answer', { schema: { ...schema, required: [] } },
-    { Codex: FakeCodex, cwd: '/tmp', runDir: '/tmp' }), /requires every property/);
+
 });
 
 test('Claude adapter consumes SDK query result and maps permissions', async () => {

@@ -3,12 +3,11 @@ const os = require('node:os');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
 
-const reminders = {
-  keyword: 'The user included "ultracode", opting this turn into multi-agent orchestration. Use the Autocode skill to fulfill the substantive request.',
-  full: 'Autocode is on: optimize for the most exhaustive, correct answer, not the fastest or cheapest. Author and run a workflow for every substantive task. Use independent verification and the Autocode quality patterns. Solo work is for conversational or trivial turns.',
-  sparse: 'Autocode is still on. Use a workflow for substantive work and check the Autocode quality patterns.',
-  exit: 'Autocode is off. Use a workflow again when the user explicitly opts in.',
-};
+const recoveredReminders = require('../references/source-prompts/activation-reminders.json');
+const reminders = Object.fromEntries(Object.entries(recoveredReminders).map(([name, text]) => [name,
+  text.replace(/^Ultracode/, 'Autocode').replaceAll('Workflow tool', 'Autocode skill')
+    .replaceAll('workflow authoring reference', path.join(__dirname, '../references/source-prompts/authoring.md')) +
+    (name === 'full' ? '\nRespect explicit user budgets and tool permissions. Use independent verification and the Autocode quality patterns.' : '')]));
 
 function hasUltracodeKeyword(prompt) {
   if (typeof prompt !== 'string' || prompt.trimStart().startsWith('/')) return false;
@@ -119,6 +118,7 @@ function run(event) {
       fs.writeSync(1, process.env.PLUGIN_DATA ? '{}' : '');
     }
   }
+  process.stdin.setEncoding('utf8');
   process.stdin.on('data', chunk => { if (done) return; raw += chunk; if (raw.length > 1048576) finish(); });
   process.stdin.on('end', finish);
   process.stdin.on('error', finish);

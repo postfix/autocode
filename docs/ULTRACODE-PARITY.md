@@ -1,5 +1,8 @@
 # Ultracode to Autocode parity
 
+The tables below record the earlier 0.1.1 candidate baseline. For the current unreleased Linux implementation, use [PARITY-STATUS.json](PARITY-STATUS.json), [the TDD ledger](../evals/parity-tdd.log), and [live checks from 2026-11-02](../evals/live-parity-2026-11-02.json). Worktree execution, custom prompt suffixes, higher-priority instructions, partial-tail recovery, failed-call usage, explicit host budgets/MCP and background/individual controls have since been implemented. Full parity is still false; the matrix preserves every original finding and its remaining work.
+
+
 This compares the recovered Ultracode instruction surfaces from Claude Code 2.1.310 with the Autocode 0.1.1 candidate. The [recovered prompt assets](../references/source-prompts/) are packaged; extracted bundle modules remain in the investigation workspace. [PROSE-DIFF.md](PROSE-DIFF.md) gives the detailed comparison for every recovered prompt surface, including all subagent variants. “Adapted” means the tool-specific wording changes for Autocode's SDK and CLI interfaces; it does not mean byte-for-byte execution of every prompt.
 
 ## Prose and prompt surfaces

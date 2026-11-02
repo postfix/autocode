@@ -1,5 +1,8 @@
 # Recovered Ultracode prose versus active Autocode instructions
 
+Historical 0.1.1 candidate comparison: the current unreleased implementation additionally activates the custom-agent text and structured suffixes through trusted registry definitions and places instructions above task messages. Read [the current API guide](../references/authoring.md) for supported behavior. Codex custom tool restrictions and shell clamps still fail explicitly; this prose snapshot is not a current runtime parity claim.
+
+
 This compares the Ultracode-specific prompt surfaces identified in the Claude Code 2.1.310 recovery inventory. It does not claim that every generic Claude Code system prompt was recovered. The extracted source prompt files are now shipped in [`references/source-prompts/`](../references/source-prompts/); npm `latest` has not received these candidate changes. "Active" means an instruction is loaded by the skill or sent by an SDK adapter. A preserved file alone is not active.
 
 ## Subagent prompts: what an agent actually receives

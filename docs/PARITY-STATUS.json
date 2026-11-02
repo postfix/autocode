@@ -1,0 +1,348 @@
+{
+  "date": "2026-11-02",
+  "source_version": "Claude Code 2.1.310",
+  "target": "Local Linux behavioral parity on Codex and Claude with explicit trusted host context and optional supported provider restrictions",
+  "full_parity": false,
+  "requirements": [
+    {
+      "id": 1,
+      "requirement": "Repeated parallel replay",
+      "status": "implemented",
+      "evidence_or_remaining_work": "Distinct fork/join history; repeated-block regression passes."
+    },
+    {
+      "id": 2,
+      "requirement": "Pipeline replay history",
+      "status": "implemented",
+      "evidence_or_remaining_work": "Ordered branch joins; repeated pipeline regression passes."
+    },
+    {
+      "id": 3,
+      "requirement": "Effective execution identity",
+      "status": "implemented",
+      "evidence_or_remaining_work": "Provider, working directory, sandbox/executable context, host revision and effective options participate in keys."
+    },
+    {
+      "id": 4,
+      "requirement": "Replay invalidation",
+      "status": "implemented",
+      "evidence_or_remaining_work": "Branch-local replay invalidation preserves completed siblings; generated nested/repeated/interleaved and interrupted joins pass. AUTO-01 portable witness passes; see AUTO-01-HANDOFF.md."
+    },
+    {
+      "id": 5,
+      "requirement": "Shared turn budgets",
+      "status": "implemented",
+      "evidence_or_remaining_work": "Trusted embedded hosts supply a shared synchronous ledger. Standalone scope is explicitly runner-owned usage."
+    },
+    {
+      "id": 6,
+      "requirement": "Failed-call token accounting",
+      "status": "implemented",
+      "evidence_or_remaining_work": "Failed/repair/retry output is charged; measured input/cache counts accumulate across repairs and recovery, with unreported fields left unknown."
+    },
+    {
+      "id": 7,
+      "requirement": "Resume usage accounting",
+      "status": "implemented",
+      "evidence_or_remaining_work": "Spent usage restores from journals; returned outputTokens counts the current attempt."
+    },
+    {
+      "id": 8,
+      "requirement": "Terminal API semantics",
+      "status": "implemented",
+      "evidence_or_remaining_work": "Finalized API failures return null+failures; programming/transport errors propagate. Native typed protocol and exact structured API envelopes preserve classification; no English matching."
+    },
+    {
+      "id": 9,
+      "requirement": "Instruction placement",
+      "status": "implemented",
+      "evidence_or_remaining_work": "Claude systemPrompt and Codex developer_instructions are separate from task text; live structured checks pass."
+    },
+    {
+      "id": 10,
+      "requirement": "Custom agents",
+      "status": "partial",
+      "evidence_or_remaining_work": "Trusted registry prompts and defaults work on both providers; Claude tool pools are implemented. Codex tool-restricted custom agents are explicitly excluded and requested unsupported restrictions fail before startup.",
+      "implemented_parts": [
+        "Trusted registry prompts and model/effort defaults on both providers",
+        "Claude trusted custom-agent tool pools"
+      ],
+      "excluded_parts": [
+        "Codex custom tool pools or restrictions not enforceable by its transport"
+      ],
+      "scope_decision": "Unsupported provider-specific policy enforcement is excluded by user direction; supported controls remain active."
+    },
+    {
+      "id": 11,
+      "requirement": "Worktree isolation",
+      "status": "implemented",
+      "evidence_or_remaining_work": "Live isolation on both providers; replay retains worktree paths; ignored artifacts, commits and unconfirmed cancellation are preserved."
+    },
+    {
+      "id": 12,
+      "requirement": "Remote execution",
+      "status": "excluded",
+      "evidence_or_remaining_work": "User chose local execution only."
+    },
+    {
+      "id": 13,
+      "requirement": "Tool capabilities",
+      "status": "partial",
+      "evidence_or_remaining_work": "Existing provider tool surfaces, Claude write-mode Bash and host permission callbacks are implemented. Complete equivalence to the original native session tool pool is explicitly excluded.",
+      "implemented_parts": [
+        "Existing provider-native tool surfaces",
+        "Claude workspace-write Bash and trusted host permission callback"
+      ],
+      "excluded_parts": [
+        "Complete equivalence to the source native session tool pool"
+      ],
+      "scope_decision": "Unsupported provider-specific policy enforcement is excluded by user direction; supported controls remain active."
+    },
+    {
+      "id": 14,
+      "requirement": "MCP forwarding",
+      "status": "implemented",
+      "evidence_or_remaining_work": "Explicit trusted MCP configuration verified by real fixture-tool execution on both providers. Automatic live connection inheritance is outside standalone scope."
+    },
+    {
+      "id": 15,
+      "requirement": "Project instruction inheritance",
+      "status": "implemented",
+      "evidence_or_remaining_work": "Explicit trusted host instructions are delivered above task text on both providers, including actual native-priority canary. Parent collection remains host-owned under the approved contract."
+    },
+    {
+      "id": 16,
+      "requirement": "Parent permissions",
+      "status": "partial",
+      "evidence_or_remaining_work": "Claude trusted host canUseTool policy is implemented. Universal Codex host permission callbacks are explicitly excluded; requesting one fails rather than blocking ordinary runs without that policy.",
+      "implemented_parts": [
+        "Claude trusted host permission callback",
+        "Explicit host instructions and supported native controls"
+      ],
+      "excluded_parts": [
+        "Universal Codex host permission callbacks covering every tool operation"
+      ],
+      "scope_decision": "Unsupported provider-specific policy enforcement is excluded by user direction; supported controls remain active."
+    },
+    {
+      "id": 17,
+      "requirement": "Per-call tool restrictions",
+      "status": "partial",
+      "evidence_or_remaining_work": "Claude native denials and tool pools, plus Codex native Bash denial, are implemented and checked live. Arbitrary Codex restrictions are explicitly excluded and requested unsupported policies fail before startup.",
+      "implemented_parts": [
+        "Claude native disallowedTools and trusted tool pools",
+        "Codex native Bash denial"
+      ],
+      "excluded_parts": [
+        "Arbitrary Codex tool denials and custom tool allowlists not enforceable by its transport"
+      ],
+      "scope_decision": "Unsupported provider-specific policy enforcement is excluded by user direction; supported controls remain active."
+    },
+    {
+      "id": 18,
+      "requirement": "Shell command clamps",
+      "status": "excluded",
+      "evidence_or_remaining_work": "Nonempty shell command clamps are explicitly excluded on both providers and produce capability errors when requested. Omitted or empty clamps add no restriction and do not block ordinary execution.",
+      "implemented_parts": [
+        "Omitted and empty clamps are treated as no restriction"
+      ],
+      "excluded_parts": [
+        "Nonempty shell command-clamp enforcement on both providers"
+      ],
+      "scope_decision": "Unsupported provider-specific policy enforcement is excluded by user direction; supported controls remain active."
+    },
+    {
+      "id": 19,
+      "requirement": "Spawn hooks",
+      "status": "implemented",
+      "evidence_or_remaining_work": "Trusted spawn hooks deny or rewrite prompt/model before replay identity; forced host model wins; immutable invocation metadata and cancellation signal supplied."
+    },
+    {
+      "id": 20,
+      "requirement": "Safety and provenance",
+      "status": "partial",
+      "evidence_or_remaining_work": "Trusted spawn hooks, instruction hierarchy and prompt withholding are implemented. Native transcript/provenance classifier integration is explicitly excluded.",
+      "implemented_parts": [
+        "Trusted spawn hooks",
+        "Higher-priority host instructions",
+        "Prompt withholding from spawn hooks"
+      ],
+      "excluded_parts": [
+        "Native transcript/provenance classifier integration"
+      ],
+      "scope_decision": "Unsupported provider-specific policy enforcement is excluded by user direction; supported controls remain active."
+    },
+    {
+      "id": 21,
+      "requirement": "Stall watchdog",
+      "status": "implemented",
+      "evidence_or_remaining_work": "Recovered default600000ms, native timeout/idle overrides, active-tool suspension and cancellation acknowledgment; observed red-green source-default tests pass."
+    },
+    {
+      "id": 22,
+      "requirement": "Recovery retries",
+      "status": "implemented",
+      "evidence_or_remaining_work": "Five bounded stall/user/lost-reply retries, cumulative reported usage and confirmed cancellation; native stream-disconnect metadata makes lost-reply recovery reachable."
+    },
+    {
+      "id": 23,
+      "requirement": "Throttled-response recovery",
+      "status": "implemented",
+      "evidence_or_remaining_work": "Source thresholds, 45-second delay and single degraded-response retry implemented; Claude native duration/stopReason forwarded; virtual-time boundary tests pass."
+    },
+    {
+      "id": 24,
+      "requirement": "Quota waiting",
+      "status": "implemented",
+      "evidence_or_remaining_work": "Trusted quota coordinator receives typed native quota snapshot and abortable per-agent signal; release is explicit and never inferred from percentages/reset timestamps."
+    },
+    {
+      "id": 25,
+      "requirement": "Individual agent controls",
+      "status": "implemented",
+      "evidence_or_remaining_work": "Authenticated CLI skip/retry dispatch with worker acknowledgment. Runner retry and CLI skip regressions pass; controls target active agents."
+    },
+    {
+      "id": 26,
+      "requirement": "Schema preflight",
+      "status": "implemented",
+      "evidence_or_remaining_work": "Source-grounded bounded preflight: AJV schema validity; required closed-object/pattern properties; numeric/string/array bounds and empty integer intervals. Optional impossible values remain legal. No general solver claim."
+    },
+    {
+      "id": 27,
+      "requirement": "Structured-output repair",
+      "status": "implemented",
+      "evidence_or_remaining_work": "Both adapters allow three validated result attempts and report all repair tokens."
+    },
+    {
+      "id": 28,
+      "requirement": "Schema portability",
+      "status": "implemented",
+      "evidence_or_remaining_work": "Strict optional/tagged union transport where representable; validated JSON text fallback otherwise. Original schema validation and bounded repair preserved. Live allOf/open-object/union/optional canaries pass."
+    },
+    {
+      "id": 29,
+      "requirement": "Model and effort defaults",
+      "status": "implemented",
+      "evidence_or_remaining_work": "Host forced settings, explicit choices, custom-agent defaults and inherited defaults resolved before cache identity."
+    },
+    {
+      "id": 30,
+      "requirement": "Prompt-cache warm-up",
+      "status": "implemented",
+      "evidence_or_remaining_work": "Source 5-second first-response gate and 270-second warm TTL implemented per prefix; genuine response callbacks on both SDK adapters."
+    },
+    {
+      "id": 31,
+      "requirement": "Literal metadata",
+      "status": "implemented",
+      "evidence_or_remaining_work": "Acorn parses metadata; expressions, spreads, computed keys, accessors and reserved object keys are refused."
+    },
+    {
+      "id": 32,
+      "requirement": "Child phases",
+      "status": "implemented",
+      "evidence_or_remaining_work": "Child phase calls leave parent state unchanged; child agents have a dedicated group."
+    },
+    {
+      "id": 33,
+      "requirement": "Saved workflow registry",
+      "status": "implemented",
+      "evidence_or_remaining_work": "CLI workflows discovery returns usage metadata without executing scripts. Host registries are authoritative under namedWorkflowsOnly."
+    },
+    {
+      "id": 34,
+      "requirement": "Console progress",
+      "status": "implemented",
+      "evidence_or_remaining_work": "Console methods forward into progress; host constructor access regression passes."
+    },
+    {
+      "id": 35,
+      "requirement": "Background integration",
+      "status": "implemented",
+      "evidence_or_remaining_work": "Linux detached supervisor, durable logs and trusted completion/failure callbacks implemented and tested."
+    },
+    {
+      "id": 36,
+      "requirement": "Other operating systems",
+      "status": "excluded",
+      "evidence_or_remaining_work": "User chose Linux-first full local target."
+    },
+    {
+      "id": 37,
+      "requirement": "Recovery storage",
+      "status": "implemented",
+      "evidence_or_remaining_work": "Partial-tail preservation plus validated private v2 journal export/import; imports get a fresh run id. Legacy ambiguous journals rejected intact."
+    },
+    {
+      "id": 38,
+      "requirement": "Standing mode",
+      "status": "implemented",
+      "evidence_or_remaining_work": "Actual packaged Codex/Claude commands pass standing-mode lifecycle; streaming UTF-8 fix preserves Unicode session identity. Host installs/trust remain explicit."
+    },
+    {
+      "id": 39,
+      "requirement": "Authoring and examples",
+      "status": "implemented",
+      "evidence_or_remaining_work": "Recovered prompt variants active; exhaustive review uses structured file/line evidence, skeptical judges, stable finding dedup and completeness-driven bounded rounds."
+    },
+    {
+      "id": 40,
+      "requirement": "Live validation",
+      "status": "implemented",
+      "evidence_or_remaining_work": "Both providers and native transport checked live for applicable text/schema/MCP/write/replay/model cases; current skill installed privately passed real authoring+CLI; packaged lifecycle commands, exact tool pools and host-denied Read verified. Exact host UI remains outside target."
+    }
+  ],
+  "evidence": [
+    "../evals/parity-tdd.log",
+    "../evals/live-parity-2026-11-02.json",
+    "AUTO-01-HANDOFF.md",
+    "RECOVERY-PARITY-EVIDENCE.md",
+    "SCHEMA-PARITY-EVIDENCE.md"
+  ],
+  "codex_enforcement_reference": "https://learn.chatgpt.com/docs/hooks#tool-coverage",
+  "tested_source": {
+    "head": "723826be19934b2bba6331510be9ec33b101315e",
+    "working_tree": "uncommitted",
+    "sha256": {
+      "scripts/runtime.mjs": "a4c4456a1983f3a8d7edc7f45bbcb71434969e2e6439d9e18011e296918f49f8",
+      "scripts/codex-adapter.mjs": "3af5bd2ed8694f56945341e02d8e119cb1c6fcd2c92ab7c663bcfe2c4ca1f655",
+      "scripts/claude-adapter.mjs": "b298cd5fed811146f0d7f360dcc1589686a003ac0a9a0017a9bbe4c8eaf50ebd",
+      "scripts/codex-app-server.mjs": "358ceeaebfaaef0070373339a1d03ee9aa4e7fc055c98ef44f38771fd0b70207",
+      "scripts/schema.mjs": "3f5eb7225ecb506c1ab219b6b8c57e3feb351388e699a6116bf28d8143d90eec",
+      "scripts/run-control.mjs": "5fa7d464efc1b682964cdf50926d3373c1cb7cf9b0e6f39fac7fe484f8e467c3",
+      "scripts/autocode.mjs": "3cb69f920029032a99d3ec7caaaa8f46ef17e1b372a1f330083759e789df3a94"
+    },
+    "full_suite": {
+      "passed": 249,
+      "failed": 0,
+      "skipped": 0,
+      "log": ".scratch/full-task-regressions.log"
+    }
+  },
+  "full_original_parity": false,
+  "scoped_target_updated": true,
+  "full_parity_basis": "Original 40-requirement comparison, including user-excluded capabilities; not a pending backend decision.",
+  "capability_scope": {
+    "status": "user decision recorded",
+    "document": "REMAINING-PARITY-BACKEND.md",
+    "decision": "Keep implemented native controls; exclude unsupported provider-specific restrictions. No engine fork or Factory executor project.",
+    "unsupported_policy_requests": "Explicit capability error before provider startup; never silently ignored.",
+    "ordinary_runs": "Unrestricted runs do not require excluded policy capabilities. Omitted and empty command clamps add no restriction."
+  },
+  "full_task_evaluation": {
+    "report": "../evals/full-task-results-2026-11-02.json",
+    "codex": {
+      "model": "gpt-6-luna",
+      "passed": true,
+      "route": "actual native Codex parent; normal approved CLI execution; no source MCP",
+      "evidence": "../.scratch/full-task-native-codex/result.json",
+      "earlier_sdk_parent_experiments": "preserved separately in full-task results"
+    },
+    "claude": {
+      "model": "claude-haiku-5-5",
+      "passed": true,
+      "blind_task_attempt": 1
+    }
+  }
+}

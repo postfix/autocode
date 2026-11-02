@@ -5,9 +5,19 @@ description: Build and run JavaScript multi-agent workflows when the user reques
 
 # Autocode
 
-For statistics or pause/resume/cancel of an existing run, use **Inspect and control** below directly. Select the existing run directory; these requests do not start another workflow.
+For statistics or pause/resume/cancel/skip/retry of an existing run, use **Inspect and control** below directly. Select the existing run directory; these requests do not start another workflow.
 
 Deliver the workflow's verified result when the user invokes Autocode or asks for multi-agent orchestration. Handle a conversational answer or trivial edit directly. For an exhaustive request, cover the discovered work list, verify findings independently, and log any omitted scope. Agent calls can spend substantial tokens; follow the user's scale and budget. The authoring agent can use high effort while each delegated `agent()` call uses a smaller model, lower effort, or another provider when that fits its task.
+
+Run workflows after explicit opt-in through one of these five cases:
+
+- A qualifying human `ultracode` keyword prompt, confirmed by the host reminder.
+- Standing mode, confirmed by the host reminder.
+- A direct request in the user's own words to run a workflow, fan out agents, or orchestrate subagents.
+- An invoked skill or slash command that instructs workflow execution.
+- A request to run a named or saved workflow.
+
+For other tasks, explain the proposed workflow's scale and cost and obtain opt-in before orchestration. A task benefiting from parallelism is not itself opt-in. Keep previously authorized work within its agreed scope and budget.
 
 When the optional Autocode plugin supplies a keyword or session-mode reminder, treat it as the user's workflow opt-in. In standing mode, author and run a workflow for every substantive task; use solo work for conversation and trivial edits. `autocode off` returns to explicit opt-in.
 
@@ -32,7 +42,11 @@ From that project directory, run the script with:
 autocode run workflow.js --provider codex --args '{"files":["src/a.js"]}'
 ```
 
-Use `--provider claude` when Claude should execute calls by default. Set a provider, model, and effort for a specific call with `agent(prompt, { provider: 'claude', model: 'haiku', effort: 'low' })`. Both adapters use native JavaScript SDKs. Progress streams to stderr; stdout contains JSON with `result`, `failures`, `logs`, `agentCount`, `outputTokens`, `runId`, and `runDir`. Pass `--run-dir <dir>` to choose a journal location. Resume the same script and directory with `--resume <runId>`; completed calls with unchanged inputs replay from the journal. Use `--budget <tokens>` for a soft output-token target. Delegated agents default to read-only tools; set `--sandbox workspace-write` when the user authorized edits.
+Use `--provider claude` when Claude should execute calls by default. Set a provider, model, and effort for a specific call with `agent(prompt, { provider: 'claude', model: 'haiku', effort: 'low' })`. Both adapters use native JavaScript SDKs. Progress streams to stderr; stdout contains JSON with `result`, `failures`, `logs`, `agentCount`, `outputTokens`, `runId`, and `runDir`. Pass `--run-dir <dir>` to choose a journal location. Resume the same script and directory with `--resume <runId>`; completed calls with unchanged inputs replay from the journal until execution diverges. Legacy journals without version 2 require a fresh run; retain their files for inspection. Use `--budget <tokens>` for a soft output-token target. Delegated agents default to read-only tools; set `--sandbox workspace-write` when the user authorized edits.
+
+For background execution on Linux, run `autocode run workflow.js --background`. It returns a run ID after the controller is ready; inspect it with `autocode status <id>`. Output is retained in `stdout.log` and `stderr.log` in the run directory.
+
+Use `agent(prompt, {isolation: 'worktree'})` for authorized parallel edits. Changed worktrees are retained and returned in `worktrees`; inspect those paths before merging. Select a custom `agentType` only when the trusted host context supplies that registry entry. Load serializable host context with `autocode run workflow.js --context context.json`; use the host API for permission callbacks and shared turn budgets. Inspect failures when a requested restriction is unsupported.
 
 ## Inspect and control
 
@@ -47,6 +61,8 @@ autocode pause [id]
 autocode resume [id]
 autocode cancel [id]
 ```
+
+To skip or retry one active agent, run `autocode skip <id> --agent <agent-row-id>` or `autocode retry <id> --agent <agent-row-id>`. Skipping returns `null` to the script; the workflow can continue. Retry cancels the current attempt before starting its replacement.
 
 `[id]` is optional syntax: replace it with a workflow ID or omit it. `ps` lists active and paused workflows in this project, including custom journal locations. With exactly one active workflow, a command without an ID selects it automatically. With several, list their IDs, names and states and ask which to manage; do not choose one yourself. A terminal asks interactively; host tools receive a `selection-required` response and question. After the user's choice, rerun the requested command with that ID. With none active, report that there is no active workflow. An explicit `status <id>` also inspects completed, failed or cancelled workflows.
 

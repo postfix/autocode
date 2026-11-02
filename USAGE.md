@@ -35,7 +35,7 @@ autocode run inspect.js --provider codex
 
 The `autocode` command is installed by `npm install -g autocode-skill`. From a source checkout, run `node scripts/autocode.mjs` with the same arguments while in that checkout.
 
-`--provider` selects the default for calls without `opts.provider`. Use `--provider claude` to change it. Use `--args '{"target":"src"}'` to supply a JSON value; omitted `args` is `undefined`. `--cwd <directory>` selects the project directory for both SDKs and workflow discovery. Journals default to that project’s `.codex/autocode-runs/<id>/`; `--run-dir <directory>` optionally changes storage without changing the owning project. `--budget <tokens>` sets a soft output-token target: calls already running can make the final total exceed it.
+`--provider` selects the default for calls without `opts.provider`. Use `--provider claude` to change it. Use `--args '{"target":"src"}'` to supply a JSON value; omitted `args` is `undefined`. `--cwd <directory>` selects the project directory for both SDKs and workflow discovery. Journals default to that project’s `.autocode/runs/<id>/`; `--run-dir <directory>` optionally changes storage without changing the owning project. `--budget <tokens>` sets a soft output-token target: calls already running can make the final total exceed it.
 
 The command returns JSON with `result`, `failures`, `logs`, `agentCount`, `outputTokens`, `runId`, and `runDir`. Progress appears on stderr. To resume, run the same script with the same `--run-dir` and `--resume <runId>`. Successful calls whose inputs and branch history match are reused from `journal.jsonl`.
 
@@ -65,7 +65,7 @@ Live controls apply to runs launched by this updated CLI on Linux. Other platfor
 
 Pausing local processes does not pause a remote provider's inference or guarantee that billing stops. Provider requests and wall-clock deadlines may finish or expire while local execution is frozen.
 
-Statistics retain labels, phases, timings, reported token counts, and bounded tool/error excerpts rather than full tool arguments or token streams. Common credential-shaped values and terminal controls are removed from excerpts; inspect error text before sharing it. At most 1,000 activity events and the most recent 1,000 agent rows are displayed; per-agent activity is limited to 20 entries. Large result records are skipped by the streaming statistics reader, while the original journal remains available. Totals cover reported completed calls across attempts, including cached replay rows with no new usage. Failed/in-flight call usage and SDK-default model identity can be unknown; no price estimate is invented.
+Statistics retain labels, phases, timings, reported token counts, and bounded tool/error excerpts rather than full tool arguments or token streams. Common credential-shaped values and terminal controls are removed from excerpts; inspect error text before sharing it. At most 1,000 activity events and the most recent 1,000 agent rows are displayed; per-agent activity is limited to 20 entries. Large result records are skipped by the streaming statistics reader, while the original journal remains available. Totals cover reported completed and failed-call usage across attempts, including cached replay rows with no new usage. Failed/in-flight call usage and SDK-default model identity can be unknown; no price estimate is invented.
 
 ## Workflow operations
 
@@ -78,10 +78,113 @@ Statistics retain labels, phases, timings, reported token counts, and bounded to
 | `phase(title)`, `log(message)` | Streams progress and records logs. `opts.phase` and `opts.label` identify individual agent calls. |
 | `budget` | Exposes `total`, `spent()`, and `remaining()`. |
 
-The runner allows up to 16 concurrent agents, 1,000 agent calls per workflow, and 4,096 items in one `parallel` or `pipeline` call. `agentType` and `isolation: 'worktree'` currently raise explicit errors.
+The runner allows up to 16 concurrent agents, 1,000 agent calls per workflow, and 4,096 items in one `parallel` or `pipeline` call. `isolation: 'worktree'` creates a detached working copy and retains edits in the returned `worktrees` paths. Custom `agentType` definitions come from trusted host context. Unsupported tool restrictions fail explicitly.
 
 ## Permissions and templates
 
-Both providers default to read-only operation. Pass `--sandbox workspace-write` only when edits are authorized. Codex uses its SDK thread sandbox; Claude receives limited file tools and SDK sandboxing. Inspect the returned `failures` before treating a workflow as successful.
+Both providers default to read-only operation. Pass `--sandbox workspace-write` only when edits are authorized. Codex uses its SDK thread sandbox; Claude receives file tools and SDK sandboxing; workspace-write mode also exposes Bash for authorized build/test commands. Native permissions or a host callback still decide whether commands may execute. Inspect the returned `failures` before treating a workflow as successful.
 
 Start from [parallel scout](assets/templates/parallel-scout.js), [review and verify](assets/templates/review-and-verify.js), [exhaustive review](assets/templates/exhaustive-review.js), or [mixed provider](assets/templates/mixed-provider.js). Read the [authoring reference](references/authoring.md) for deterministic resume and workflow globals, and the [quality patterns](references/quality-patterns.md) for the recovered decomposition, verification, and completeness prompts.
+
+## Background and individual agent controls
+
+On Linux, `autocode run inspect.js --background` returns `{runId, runDir, state}` after startup. Use the existing status, pause, resume and cancel commands for that ID. `stdout.log` and `stderr.log` retain the program output.
+
+Use `autocode skip <id> --agent 1` to return `null` from one active agent call, or `autocode retry <id> --agent 1` to cancel and replace its attempt. Requests are authenticated by the controller and acknowledged by the worker. Retry is bounded; an agent that does not acknowledge cancellation is not restarted concurrently.
+
+## Trusted host context
+
+`autocode run inspect.js --context context.json` loads JSON context. A minimal example is:
+
+```json
+{"id":"session-id","revision":"1","providers":{"codex":{"model":"your-model","effort":"high"}}}
+```
+
+The embedded `runWorkflow({hostContext})` interface additionally accepts callbacks. Context fields currently implemented are:
+
+- `id` and `revision`: required nonempty strings, included in replay identity. Increment the revision when instructions, agent definitions, MCP configuration or policy changes.
+- `instructions`: trusted project instructions delivered above the task text.
+- `providers.codex` and `providers.claude`: `model`, `effort`, `forcedModel`, `forcedEffort`, and provider-native `mcpServers` configuration.
+- `agents`: registry keyed by `agentType`, with `prompt` and optional `tools`/`disallowedTools`. Codex refuses tool-restricted entries rather than dropping their restrictions.
+- `onSpawn({prompt, options, workflow, signal})`: optional async hook; return `{deny: "reason"}` to refuse, or `{prompt, model}` to rewrite those fields. Rewrites participate in replay identity; a forced host model still wins. `workflow` is an immutable `{runId, agentIndex}`. Set `shareWorkflowPrompt: false` to withhold task text from this hook and disable its prompt rewrites.
+- `canUseTool`: Claude SDK permission callback; JSON files cannot supply functions. Both Codex transports refuse contexts that require this unsupported permission callback; ordinary calls without it still run.
+- `budget`: `{total, spent(), charge(delta)}` shared by embedded workflows. These callbacks are synchronous and must share one authoritative ledger; a host can charge main-agent usage into the same ledger. Standalone budgets cover runner-owned reported output usage.
+- `waitForQuota({provider, rateLimit, signal})`: optional host coordinator; return `true` after an authorized quota wait to retry, or decline to return a terminal `null` result. Respect the supplied abort signal.
+
+The host supplies this context outside workflow source. Standalone execution does not automatically inherit the parent transcript, live MCP connections, permission decisions or turn-wide token usage.
+
+### Running the SDK inside another Codex session
+
+A nested SDK process needs a writable, authenticated Codex state directory and a parent command sandbox that permits network access. A network-denied parent prevents the child SDK from contacting its provider, even when the child's own thread sandbox is configured correctly. An observed failure is `workspace routing discovery failed`.
+
+The trusted host can set `providers.codex.codexHome` to a private directory (mode `0700`) outside protected `.codex` paths:
+
+```json
+{"id":"parent-session","revision":"1","providers":{"codex":{"codexHome":"/absolute/private/sdk-state"}}}
+```
+
+Initialize that directory through the host's authenticated Codex setup. Keep authentication private; never put credential contents into workflow source or context JSON. The adapter inherits the host process environment and overrides only `CODEX_HOME`. Model, instructions and MCP configuration still need the documented explicit context fields.
+
+For a Codex SDK parent, permit the required provider network traffic while retaining its workspace filesystem sandbox:
+
+```js
+const parent = new Codex({
+  config: { sandbox_workspace_write: { network_access: true } }
+});
+const thread = parent.startThread({
+  workingDirectory: project,
+  sandboxMode: 'workspace-write',
+  approvalPolicy: 'never',
+  skipGitRepoCheck: true
+});
+```
+
+The equivalent native configuration is:
+
+```toml
+sandbox_mode = "workspace-write"
+approval_policy = "never"
+
+[sandbox_workspace_write]
+network_access = true
+```
+
+This permission applies to commands launched by the parent. It does not change Autocode's default read-only child sandbox. A real parent-to-CLI-to-Codex SDK canary completed with this configuration and returned `NESTED_SDK_OK`; this does not establish automatic transcript, plugin-hook or live MCP connection inheritance.
+
+## Replay compatibility
+
+New journals use version 2. Older journals remain intact but cannot be replayed safely because their branch identities can be ambiguous. Inspect their results and start a fresh run in a new directory. Resume preserves a truncated final journal record in a `.partial-*` file and repairs the completed prefix atomically; corruption inside the journal is still an error.
+
+`budget.spent()` retains historical reported output usage on resume. Returned `outputTokens` remains the usage of the current attempt, so cached answers do not incur a second charge. In-flight calls can exceed the admission threshold. Failed calls are charged when the provider reports usage; unreported usage remains unknown.
+
+## Saved workflow discovery
+
+Run `autocode workflows --json` to list saved project workflows and their `whenToUse` metadata without executing their bodies. `--cwd <project>` selects a project. Invoke a discovered child with `workflow(entry.reference, args)`; the reference may differ from its display name.
+
+`--context <file>` adds trusted `workflows` entries mapping references to source strings. A context with `namedWorkflowsOnly: true` discovers and executes only that host registry; child `{scriptPath}` references are refused. Root script selection remains an explicit CLI input.
+
+Provider restrictions are optional. Codex supports `disallowedTools: ['Bash']` through its native command-tool switch. Claude supports native `disallowedTools`, trusted custom-agent tool pools and host permission callbacks. These implemented controls remain active.
+
+Other Codex tool denials, custom tool pools and universal host permission callbacks are excluded from the agreed scope. Nonempty `bashCommandClamp` policies are excluded on both providers. An explicitly requested unsupported policy produces a capability error before provider startup; it is never silently ignored. Omitted restrictions and empty command clamps add no restriction, so ordinary execution does not require those capabilities. The scope does not include an engine fork or a Factory executor project. See the [capability scope decision](docs/REMAINING-PARITY-BACKEND.md) and [original requirement matrix](docs/PARITY-STATUS.json).
+
+New runs register under `.autocode/runs` so startup can run in hosts that protect `.codex`. Project controls also discover legacy `.codex/autocode-runs` directories; existing files are not moved.
+
+## Journal snapshots and host notifications
+
+Export with `autocode export --run-dir <run> --to <new-snapshot-directory>`. Import with `autocode import --from <snapshot> --run-dir <new-run-directory>`. Both destinations must be new directories. Import returns a new run ID; pass it to `run <script> --run-dir <new-run-directory> --resume <id>` with the original arguments and execution context. Changed context invalidates cached results.
+
+Snapshots contain `run.json` and `journal.jsonl`, not controller tokens, project files or retained worktree contents. Preserve those files separately when moving between machines.
+
+Embedded hosts can supply `onComplete(output)` and `onFailure({runId,error})`. Notification failures preserve the completed result or original workflow error and remain in the journal/status. A successful response with missing provider usage sets `usageIncomplete: true`; numeric token totals are lower bounds when this flag is present.
+
+Calls sharing an instruction prefix wait for the first genuine model response, up to five seconds; a warm prefix expires after 270 seconds. Prefix coordination is shared by workflows using the same trusted host context object. Provider initialization alone does not release waiting calls.
+
+A measured slow response with fewer than 50 output tokens, no stop reason, and no structured result follows the recovered single 45-second backoff and retry policy. Missing provider metadata does not trigger this heuristic. Both attempts count toward reported output usage.
+
+Codex uses native strict structured output where the schema can be represented faithfully. Other valid object schemas, including intersections, boolean subschemas, tuple items and open objects, use JSON text transport. The original JSON Schema still validates every returned result, and invalid JSON/results consume the same bounded repair attempts.
+
+### Native Codex transport
+
+Set trusted context `providers.codex.transport` to `"app-server"` to use the native stdio protocol instead of the default `"exec"` SDK transport. It resolves the executable from the pinned SDK installation, preserves the same sandbox, instructions, schema repair and explicit state-home settings, and retains native typed failures and authoritative quota metadata. A native retry notification does not trigger a second runner retry. Final API failures return `null` with a recorded failure; transport and programming errors propagate. Lost-stream failures use the bounded recovery policy.
+
+This transport keeps the same capability checks for host permission callbacks and tool restrictions. Native approval requests do not intercept every tool operation. Quota snapshots do not authorize resuming from percentages or reset times; the trusted quota coordinator must release a wait.

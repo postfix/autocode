@@ -20,7 +20,7 @@ test('Claude SDK adapter permits authorized edits through file tools', async () 
   };
   await claudeAgent('Edit', { sandbox: 'workspace-write' }, { query, runDir: '/tmp', cwd: '/tmp' });
   assert.equal(options.permissionMode, 'acceptEdits');
-  assert.deepEqual(options.tools, ['Read', 'Grep', 'Glob', 'Edit', 'Write']);
+  assert.deepEqual(options.tools, ['Read', 'Grep', 'Glob', 'Edit', 'Write', 'Bash']);
   assert.equal(options.sandbox.enabled, true);
 });
 

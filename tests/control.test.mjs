@@ -6,7 +6,6 @@ import {join} from 'node:path';
 import {runAutocode} from '../scripts/autocode.mjs';
 import {runWorkflow} from '../scripts/runtime.mjs';
 import {spawn} from 'node:child_process';
-import net from 'node:net';
 import {fileURLToPath} from 'node:url';
 
 test('status includes phases, tokens and errors even when a workflow catches its failed agent', async () => {
@@ -67,7 +66,7 @@ test('project commands discover custom runs, require a choice for multiple runs,
     start([]);
     const rows=await until(async()=>{const r=await command(['ps']);return r.length===2&&r.every(x=>x.phase==='Build')&&r;});
     const second=rows.find(x=>x.runId!==first.runId);
-    assert.ok(second.runDir.startsWith(join(project,'.codex','autocode-runs')));
+    assert.ok(second.runDir.startsWith(join(project,'.autocode','runs')));
     for(const verb of ['status','pause','resume','cancel']){
       const choice=await command([verb]);assert.equal(choice.state,'selection-required');
       assert.deepEqual(choice.workflows.map(x=>x.runId).sort(),rows.map(x=>x.runId).sort());
@@ -102,7 +101,7 @@ test('project commands discover custom runs, require a choice for multiple runs,
   }
 });
 
-test('pause freezes the current program and a detached child; resume keeps PIDs; cancel terminates both', {skip:process.platform!=='linux'}, async () => {
+for (const controlTransport of ['auto','file']) test(`${controlTransport}: pause freezes the current program and a detached child; resume keeps PIDs; cancel terminates both`, {skip:process.platform!=='linux'}, async () => {
   const {superviseRun,controlRun}=await import('../scripts/run-control.mjs');
   const dir=await mkdtemp(join(tmpdir(),'autocode-control-'));
   const fixture=join(dir,'program.mjs');
@@ -113,7 +112,7 @@ fs.writeFileSync(dir+'/child.pid',String(child.pid));let n=0;setInterval(()=>fs.
   await writeFile(fixture,program);
   let finished;
   try {
-    finished=superviseRun([process.execPath,fixture,dir],{runDir:dir,provider:'codex',forwardOutput:false});
+    finished=superviseRun([process.execPath,fixture,dir],{runDir:dir,provider:'codex',forwardOutput:false,controlTransport});
     await until(()=>readFile(join(dir,'child.count'),'utf8'));
     await assert.rejects(superviseRun([process.execPath,fixture,dir],{runDir:dir,forwardOutput:false}),/already has a controller/);
     const pids=await Promise.all(['parent','child'].map(name=>readFile(join(dir,name+'.pid'),'utf8')));
@@ -126,8 +125,11 @@ fs.writeFileSync(dir+'/child.pid',String(child.pid));let n=0;setInterval(()=>fs.
     assert.deepEqual(await Promise.all(['parent','child'].map(name=>readFile(join(dir,name+'.pid'),'utf8'))),pids,'resume continues the same processes');
     await controlRun(dir,'pause');
     const owner=JSON.parse(await readFile(join(dir,'control.json'),'utf8'));
-    const refused=await new Promise((resolve,reject)=>{const socket=net.createConnection(owner.endpoint);let text='';socket.on('error',reject);socket.on('connect',()=>socket.write(JSON.stringify({command:'cancel',token:'wrong-token'})+'\n'));socket.on('data',chunk=>text+=chunk);socket.on('end',()=>resolve(JSON.parse(text)));});
-    assert.match(refused.error,/invalid.*token/);assert.equal((await controlRun(dir,'status')).state,'paused');
+    if(controlTransport==='file')assert.equal(owner.transport,'file');
+    await writeFile(join(dir,'control.json'),JSON.stringify({...owner,token:'wrong-token'}));
+    try { await assert.rejects(controlRun(dir,'cancel'),/invalid.*token/); }
+    finally { await writeFile(join(dir,'control.json'),JSON.stringify(owner)); }
+    assert.equal((await controlRun(dir,'status')).state,'paused');
     assert.equal((await controlRun(dir,'cancel')).state,'cancelled');
     assert.equal((await finished).state,'cancelled');
     for(const pid of pids) await until(async()=>{try{const s=await readFile('/proc/'+pid+'/stat','utf8');return s.slice(s.lastIndexOf(')')+2).startsWith('Z');}catch(e){return e.code==='ENOENT';}});

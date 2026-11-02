@@ -37,7 +37,24 @@
     "scripts/runtime.mjs",
     "scripts/run-control.mjs",
     "scripts/run-stats.mjs",
-    "scripts/subagent-prompt.mjs"
+    "scripts/subagent-prompt.mjs",
+    "scripts/schema.mjs",
+    "scripts/codex-app-server.mjs",
+    "docs/PARITY-STATUS.json",
+    "docs/AUTO-01-HANDOFF.md",
+    "docs/RECOVERY-PARITY-EVIDENCE.md",
+    "docs/SCHEMA-PARITY-EVIDENCE.md",
+    "evals/parity-tdd.log",
+    "evals/live-parity-2026-11-02.json",
+    "evals/README.md",
+    "evals/live-skill.mjs",
+    "docs/REMAINING-PARITY-BACKEND.md",
+    "evals/full-task-fixture.mjs",
+    "evals/full-task-codex.mjs",
+    "evals/full-task-claude.mjs",
+    "evals/full-task-source-mcp.mjs",
+    "evals/full-task-results-2026-11-02.json",
+    "evals/RESULTS.md"
   ],
   "engines": {
     "node": ">=20"
@@ -54,6 +71,10 @@
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "0.3.310",
-    "@openai/codex-sdk": "0.164.0"
+    "@openai/codex-sdk": "0.164.0",
+    "acorn": "8.15.0",
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
+    "@modelcontextprotocol/sdk": "1.32.2"
   }
 }
