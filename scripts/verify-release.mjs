@@ -3,7 +3,9 @@ import { pathToFileURL } from 'node:url';
 
 const required = new Set([
   'package.json', 'LICENSE', 'README.md', 'INSTALL.md', 'USAGE.md', 'SKILL.md',
-  'docs/PROSE-DIFF.md',
+  'evals/review-context-live.mjs', 'evals/review-context-fixture.mjs', 'evals/review-context-results-2026-11-03.json', 'evals/parent-completion-results-2026-11-03.json', 'evals/authoring-smoke-results-2026-11-03.json', 'evals/COVERAGE.md',
+  'docs/PROSE-DIFF.md', 'docs/CONTEXT-FORKING-RESEARCH.md',
+  'evals/embedded-discovery-live.mjs', 'evals/embedded-discovery-results-2026-11-03.json',
   'docs/PARITY-STATUS.json', 'docs/REMAINING-PARITY-BACKEND.md', 'docs/AUTO-01-HANDOFF.md', 'docs/RECOVERY-PARITY-EVIDENCE.md', 'docs/SCHEMA-PARITY-EVIDENCE.md', 'evals/README.md', 'evals/live-skill.mjs',
   'evals/full-task-fixture.mjs', 'evals/full-task-codex.mjs', 'evals/full-task-claude.mjs', 'evals/full-task-source-mcp.mjs', 'evals/full-task-results-2026-11-02.json', 'evals/RESULTS.md', 'evals/parity-tdd.log', 'evals/live-parity-2026-11-02.json', 'hooks/autocode-mode.cjs', 'hooks/claude-codex-hooks.json',
   '.codex-plugin/plugin.json', '.claude-plugin/plugin.json',
@@ -18,7 +20,7 @@ const required = new Set([
   'references/source-prompts/subagent-prompts.json',
   'references/source-prompts/prose-fragments.md',
   'assets/templates/parallel-scout.js', 'assets/templates/review-and-verify.js',
-  'assets/templates/exhaustive-review.js', 'assets/templates/mixed-provider.js', 'scripts/autocode.mjs',
+  'assets/templates/exhaustive-review.js', 'assets/templates/review-fix-loop.js', 'assets/templates/mixed-provider.js', 'scripts/autocode.mjs',
   'scripts/claude-adapter.mjs', 'scripts/codex-adapter.mjs', 'scripts/runtime.mjs',
   'scripts/subagent-prompt.mjs', 'scripts/schema.mjs', 'scripts/codex-app-server.mjs', 'scripts/run-control.mjs', 'scripts/run-stats.mjs',
 ]);

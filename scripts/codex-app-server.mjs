@@ -96,7 +96,7 @@ class Connection{
  }
 }
 function itemValue(item){
- const type={agentMessage:'agent_message',reasoning:'reasoning',commandExecution:'command_execution',mcpToolCall:'mcp_tool_call',fileChange:'file_change',webSearch:'web_search'}[item.type];
+ const type={agentMessage:'agent_message',reasoning:'reasoning',commandExecution:'command_execution',mcpToolCall:'mcp_tool_call',fileChange:'file_change',webSearch:'web_search',contextCompaction:'context_compaction'}[item.type];
  return type?{...item,type,...(item.type==='commandExecution'?{command:item.command,exit_code:item.exitCode,aggregated_output:item.aggregatedOutput,status:item.status}: {})}:null;
 }
 export class AppServerCodex{

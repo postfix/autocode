@@ -1,15 +1,14 @@
 #!/usr/bin/env node
-import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { existsSync, realpathSync } from 'node:fs';
-import { readFile, readdir, mkdir, open } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createInterface } from 'node:readline/promises';
 import { runWorkflow, workflowMetadata, exportWorkflowJournal, importWorkflowJournal } from './runtime.mjs';
 import { codexAgent } from './codex-adapter.mjs';
 import { claudeAgent } from './claude-adapter.mjs';
-import { readRunStatus, formatStatus, safeText } from './run-stats.mjs';
+import { readRunStatus, formatStatus, safeText, projectRunRegistry } from './run-stats.mjs';
 import { controlRun, superviseRun } from './run-control.mjs';
 
 function parseRun(argv) {
@@ -18,13 +17,13 @@ function parseRun(argv) {
   const scriptPath = resolve(argv[1]);
   const flags = {};
   for (let i = 2; i < argv.length; i++) {
-    if (argv[i] === '--background') { flags.background = true; continue; }
+    if (argv[i] === '--background') throw new Error('Unattended --background has no parent completion delivery. Await the foreground CLI or run it inside a host-native background task that delivers success and failure.');
     if (!argv[i]?.startsWith('--') || argv[i + 1] === undefined) throw new Error(`invalid option: ${argv[i]}`);
     const name = argv[i].slice(2);
     flags[name] = argv[++i];
   }
   for (const name of Object.keys(flags))
-    if (!['args', 'run-dir', 'resume', 'budget', 'sandbox', 'codex', 'claude', 'provider', 'cwd', 'context', 'background'].includes(name))
+    if (!['args', 'run-dir', 'resume', 'budget', 'sandbox', 'codex', 'claude', 'provider', 'cwd', 'context'].includes(name))
       throw new Error(`unknown option: --${name}`);
   const provider = flags.provider ?? 'codex';
   if (!['codex', 'claude'].includes(provider)) throw new Error(`unknown provider: ${provider}`);
@@ -38,13 +37,12 @@ function parseRun(argv) {
   return {scriptPath,flags,provider,cwd,runDir,runId,args,budget,sandbox};
 }
 
-const terminal = new Set(['completed','failed','cancelled']);
+const terminal = new Set(['completed','failed','cancelled','interrupted']);
 async function projectRuns() {
   const project=realpathSync(process.cwd());
-  const directories=new Map();
-  for (const location of ['.autocode/runs', '.codex/autocode-runs']) {
-  const root=join(project,location);
-  const entries=await readdir(root,{withFileTypes:true}).catch(error=>{if(error.code==='ENOENT')return [];throw error;});
+  const directories=new Map(),unreadable=[];
+  for (const root of [join(project,'.autocode/runs'),join(project,'.codex/autocode-runs'),projectRunRegistry(project)]) {
+  const entries=await readdir(root,{withFileTypes:true}).catch(error=>{if(error.code==='ENOENT')return [];if(error.code==='EACCES'&&root!==projectRunRegistry(project)){unreadable.push(root);return [];}throw error;});
   for(const entry of entries) {
     if(entry.isDirectory()){
       const directory=realpathSync(join(root,entry.name));
@@ -56,8 +54,14 @@ async function projectRuns() {
       if(ref.project!==project||typeof ref.runDir!=='string')throw Error('invalid project workflow registration');
       let directory;try{directory=realpathSync(ref.runDir);}catch(error){if(error.code==='ENOENT')continue;throw error;}
       const id=entry.name.slice(0,-5);
-      const owner=JSON.parse(await readFile(join(directory,'control.json'),'utf8'));
-      if(owner.project!==project||owner.runId!==id)throw Error('project workflow registration does not match its controller');
+      let embeddedOwner=false;
+      const owner=await readFile(join(directory,'control.json'),'utf8').catch(error=>{
+        if(error.code!=='ENOENT')throw error;
+        embeddedOwner=true;return readFile(join(directory,'runner.json'),'utf8');
+      }).then(JSON.parse).catch(error=>{if(error.code==='ENOENT')return null;throw error;});
+      if(!owner)continue;
+      if(embeddedOwner&&owner.project!==project)continue;
+      if(owner.project!==project||owner.runId!==id)throw Error('project workflow registration does not match its owner');
       directories.set(directory,id);
     }
   }
@@ -67,13 +71,19 @@ async function projectRuns() {
     try {const run=await readRunStatus(directory);if(id&&run.runId!==id)throw Error('workflow ID does not match its registration');runs.push(run);}
     catch(error){if(error.code==='ENOENT'&&!id)continue;throw error;}
   }
+  if(unreadable.length){
+    const message=`Cannot inspect workflow registry: ${unreadable.map(path=>safeText(path)).join(', ')}`;
+    if(!runs.length)throw Error(message);
+    runs.discoveryError=message;
+    process.stderr.write(`Warning: ${message}; showing discoverable runs.\n`);
+  }
   return runs.sort((a,b)=>String(a.runId).localeCompare(String(b.runId)));
 }
 
 function formatRuns(runs) {
   if(!runs.length)return 'No active Autocode workflows in this project.';
-  return ['ID | Workflow | State | Phase | Agents | Output tokens | Errors',...runs.map(run=>
-    `${safeText(run.runId??'unknown')} | ${run.name} | ${safeText(run.state)} | ${run.phase||'—'} | ${run.agentCount} | ${run.outputTokens} | ${run.errorCount}${run.error?`\n  Error: ${run.error}`:''}`)].join('\n');
+  return ['ID | Workflow | State | Phase | Agents | Output tokens | Errors | Controls',...runs.map(run=>
+    `${safeText(run.runId??'unknown')} | ${run.name} | ${safeText(run.state)} | ${run.phase||'—'} | ${run.agentCount} | ${run.outputTokens} | ${run.errorCount} | ${run.controllable===true?'CLI':run.controllable===false?'host':'unknown'}${run.error?`\n  Error: ${run.error}`:''}`)].join('\n');
 }
 function formatSelection(result) {return `${formatRuns(result.workflows)}\n${result.question}`;}
 
@@ -123,13 +133,15 @@ export async function runAutocode(argv, adapters = { codex: codexAgent, claude: 
     if(flags.id&&flags.directory)throw Error('choose a workflow ID or --run-dir, not both');
     if(argv[0]==='ps') {
       if(flags.id||flags.directory||flags.agent)throw Error('usage: autocode ps [--json]');
-      const runs=(await projectRuns()).filter(run=>!terminal.has(run.state));
+      const discovered=await projectRuns(),runs=discovered.filter(run=>!terminal.has(run.state));
+      if(!runs.length&&discovered.discoveryError)throw Error(discovered.discoveryError);
       return flags.json?runs:formatRuns(runs);
     }
     if (['skip','retry'].includes(argv[0]) && !flags.agent) throw Error('agent controls require --agent <id>');
     if(flags.agent&&!['status','skip','retry'].includes(argv[0]))throw Error('--agent is only available for status; controls apply to the entire workflow');
     if(!flags.directory) {
       const runs=await projectRuns();
+      if(!flags.id&&runs.discoveryError)throw Error(runs.discoveryError);
       const candidates=flags.id?runs.filter(run=>run.runId===flags.id):runs.filter(run=>!terminal.has(run.state));
       if(flags.id&&!candidates.length)throw Error(`workflow ID not found in this project: ${safeText(flags.id)}`);
       if(!candidates.length)return flags.json?{state:'idle',workflows:[]}:formatRuns([]);
@@ -183,31 +195,6 @@ if (process.argv[1] && existsSync(process.argv[1]) &&
   const argv=process.argv.slice(2);
   const main=async()=>{
     const worker=process.env.AUTOCODE_WORKER==='1'&&!!process.send&&process.connected;
-    if (argv[0] === 'run' && !worker && argv.includes('--background')) {
-      if (process.platform !== 'linux') throw Error('background workflows currently require Linux');
-      const { runDir, runId } = parseRun(argv);
-      await mkdir(runDir, { recursive: true });
-      const out = await open(join(runDir, 'stdout.log'), 'a', 0o600);
-      const err = await open(join(runDir, 'stderr.log'), 'a', 0o600);
-      let daemon;
-      try {
-        daemon = spawn(process.execPath, [fileURLToPath(import.meta.url), ...argv.filter(value => value !== '--background'), '--run-dir', runDir],
-          { detached: true, stdio: ['ignore', out.fd, err.fd], env: { ...process.env, AUTOCODE_LAUNCH_ID: runId } });
-        await new Promise((resolve, reject) => { daemon.once('spawn', resolve); daemon.once('error', reject); });
-      } finally { await out.close(); await err.close(); }
-      daemon.unref();
-      for (let attempt = 0; attempt < 1000; attempt++) {
-        const state = await readFile(join(runDir, 'control.json'), 'utf8').then(JSON.parse).catch(error => { if (error.code === 'ENOENT') return null; throw error; });
-        if (state?.runId === runId && ['running', 'completed', 'failed'].includes(state.state)) {
-          process.stdout.write(JSON.stringify({ runId, runDir, state: state.state }) + '\n');
-          return;
-        }
-        if (daemon.exitCode !== null) throw Error(safeText(await readFile(join(runDir, 'stderr.log'), 'utf8')) || 'background launch failed');
-        await new Promise(resolve => setTimeout(resolve, 10));
-      }
-      daemon.kill('SIGTERM');
-      throw Error('background workflow did not become ready');
-    }
     if(argv[0]==='run'&&!worker&&process.platform==='linux'){
       const {runDir,runId,provider,cwd}=parseRun(argv);
       const workerArgs=[...argv,'--run-dir',runDir];

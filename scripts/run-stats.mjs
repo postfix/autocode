@@ -1,6 +1,72 @@
 import {createReadStream} from 'node:fs';
-import {readFile, stat} from 'node:fs/promises';
+import {readFile, stat, realpath, mkdir, writeFile, link, rename, unlink, chmod} from 'node:fs/promises';
 import {join, resolve, basename} from 'node:path';
+import {homedir} from 'node:os';
+import {randomUUID,createHash} from 'node:crypto';
+
+async function processIdentity(pid) {
+  if (!Number.isSafeInteger(pid) || pid < 1) return null;
+  try {
+    const text=await readFile(`/proc/${pid}/stat`,'utf8');
+    const fields=text.slice(text.lastIndexOf(')')+2).split(' ');
+    return {state:fields[0],start:fields[19]};
+  } catch(error) { if (['ENOENT','ESRCH'].includes(error.code)) return null; throw error; }
+}
+
+async function publishJSON(file,value,exclusive=false) {
+  const temporary=`${file}.${randomUUID()}.tmp`;
+  try {
+    await writeFile(temporary,JSON.stringify(value)+'\n',{flag:'wx',mode:0o600});
+    if (exclusive) await link(temporary,file); else await rename(temporary,file);
+  } finally { await unlink(temporary).catch(error=>{if(error.code!=='ENOENT')throw error;}); }
+}
+
+export async function registerEmbeddedRun({runDir,runId,cwd}) {
+  if(process.platform!=='linux')return;
+  if (!/^wf_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(runId??'')) throw Error('invalid project workflow ID');
+  const [project,directory]=await Promise.all([realpath(cwd),realpath(runDir)]);
+  let control,transferFromSupervisor=false;
+  try { control=JSON.parse(await readFile(join(directory,'control.json'),'utf8')); }
+  catch(error) { if(error.code!=='ENOENT')throw error; }
+  if (control!==undefined) {
+    if(control?.runId!==runId||typeof control?.project!=='string'||typeof control?.runDir!=='string')throw Error('workflow directory has conflicting supervisor ownership');
+    const [controlProject,controlDirectory]=await Promise.all([realpath(control.project),realpath(control.runDir)]);
+    if(controlProject!==project||controlDirectory!==directory)throw Error('workflow directory has conflicting supervisor ownership');
+    if(['completed','failed','cancelled'].includes(control.state))transferFromSupervisor=true;
+    else if(['starting','running'].includes(control.state)&&control.childPid===process.pid)return;
+    else throw Error('workflow directory has conflicting supervisor ownership');
+  }
+  const root=join(project,'.autocode','runs'),reference=join(root,`${runId}.json`);
+  let previous,permissionDenied=false;
+  try { previous=JSON.parse(await readFile(reference,'utf8')); }
+  catch(error) { if(['EACCES','EROFS'].includes(error.code))permissionDenied=true;else if(error.code!=='ENOENT')throw error; }
+  if(previous!==undefined&&(previous?.project!==project||previous?.runDir!==directory))throw Error('workflow ID already registered to another run');
+  if(transferFromSupervisor){
+    const archived=join(directory,`control.previous-${randomUUID()}.json`);
+    await rename(join(directory,'control.json'),archived);await chmod(archived,0o600);
+  }
+  const current=await processIdentity(process.pid);
+  if (!current?.start) throw Error('embedded workflow process identity is unavailable');
+  const owner={project,runDir:directory,runId,pid:process.pid,processStart:current.start};
+  await publishJSON(join(directory,'runner.json'),owner);
+  const publishReference=async root=>{
+    const reference=join(root,`${runId}.json`);
+    await mkdir(root,{recursive:true,mode:0o700});
+    await publishJSON(reference,{project,runDir:directory,kind:'embedded'},true).catch(async error=>{
+      if(error.code!=='EEXIST')throw error;
+      const previous=JSON.parse(await readFile(reference,'utf8'));
+      if(previous?.project!==project||previous?.runDir!==directory)throw Error('workflow ID already registered to another run');
+      if(transferFromSupervisor||previous.kind!=='embedded')await publishJSON(reference,{project,runDir:directory,kind:'embedded'});
+    });
+  };
+  if(permissionDenied)await publishReference(projectRunRegistry(project));
+  else try { await publishReference(root); }
+  catch(error) { if(!['EACCES','EROFS'].includes(error.code))throw error;await publishReference(projectRunRegistry(project)); }
+}
+
+export function projectRunRegistry(project) {
+  return join(process.env.XDG_STATE_HOME||join(homedir(),'.local','state'),'autocode','projects',createHash('sha256').update(project).digest('hex'),'runs');
+}
 
 export function safeText(value, limit=2000) {
   return String(value??'').slice(-8192)
@@ -78,19 +144,33 @@ export async function readRunStatus(directory) {
     if(['starting','running','paused','cancelling'].includes(saved.state)) {
       try{control=await (await import('./run-control.mjs')).controlRun(runDir,'status');}catch{control={...saved,state:'unavailable'};}
     }
-    Object.assign(result,{state:control.state,pid:control.childPid,exitCode:control.exitCode??null,signal:control.signal??null});
+    Object.assign(result,{state:control.state,pid:control.childPid,controllable:true,exitCode:control.exitCode??null,signal:control.signal??null});
     result.runId??=control.runId??null;
     if(control.error)result.error=safeText(control.error);
     if(control.controlError)result.controlError=safeText(control.controlError);
     if(control.persistenceError){result.persistenceError=safeText(control.persistenceError);result.statisticsIncomplete=true;}
     startedAt??=control.startedAt;endedAt=control.endedAt??endedAt;
     for(const call of agents.values())call.provider??=control.provider??null;
-  }catch(error){if(error.code!=='ENOENT')throw error;}
-  result.elapsedMs=startedAt?Math.max(0,(endedAt??Date.now())-startedAt):null;
+  }catch(error){
+    if(error.code!=='ENOENT')throw error;
+    result.controllable=false;
+    let owner;
+    try { owner=JSON.parse(await readFile(join(runDir,'runner.json'),'utf8')); }
+    catch(error) { if(error.code!=='ENOENT')throw error; }
+    if (owner) {
+      result.pid=Number.isSafeInteger(owner.pid)?owner.pid:null;
+      if (result.state==='running') {
+        const current=await processIdentity(owner.pid);
+        result.state=owner.runId===result.runId&&!!current&&typeof owner.processStart==='string'&&owner.processStart.length>0&&current.start===owner.processStart&&!['Z','X'].includes(current.state)?'running':'interrupted';
+      }
+    } else if (result.state==='running') result.state='unknown';
+  }
+  result.elapsedMs=result.state==='interrupted'?null:startedAt?Math.max(0,(endedAt??Date.now())-startedAt):null;
   result.agentCount=totalAgents;
   if(result.state==='cancelled')for(const call of agents.values())if(['running','queued'].includes(call.state))call.state='cancelled';
+  if(result.state==='interrupted')for(const call of agents.values())if(['running','queued'].includes(call.state)){call.state='interrupted';result.usageIncomplete=true;}
   if([...agents.values()].some(call=>call.state==='running'||call.state==='queued'))result.usageIncomplete=true;
-  result.agents=[...agents.values()].map(call=>({...call,elapsedMs:call.startedAt?Math.max(0,(call.endedAt??endedAt??Date.now())-call.startedAt):null}));
+  result.agents=[...agents.values()].map(call=>({...call,elapsedMs:call.state==='interrupted'&&call.endedAt===null?null:call.startedAt?Math.max(0,(call.endedAt??endedAt??Date.now())-call.startedAt):null}));
   if(result.malformedRecords||result.partialRecord)result.statisticsIncomplete=true;
   return result;
 }

@@ -37,6 +37,13 @@ export async function claudeAgent(prompt, opts = {}, context = {}) {
   const controller = new AbortController();
   if (signal?.aborted) controller.abort(signal.reason);
   signal?.addEventListener('abort', () => controller.abort(signal.reason), { once: true });
+  const compactions = new Map(), activeCompactions = new Set();
+  const compactionProgress = (input, status) => {
+    if (typeof input.session_id !== 'string' || !input.session_id) return;
+    if (!compactions.has(input.session_id)) compactions.set(input.session_id, `context-compaction-${compactions.size + 1}`);
+    if(status==='running')activeCompactions.add(input.session_id);else activeCompactions.delete(input.session_id);
+    context.onActivity?.({id:compactions.get(input.session_id),tool:'context_compaction',status});
+  };
   const options = { systemPrompt: [context.hostContext?.instructions, subagentInstructions(!!opts.schema, custom?.prompt)].filter(Boolean).join('\n\n'), cwd, model: opts.model, effort: opts.effort,
     permissionMode: sandbox === 'read-only' ? 'dontAsk' : 'acceptEdits',
     permissionPrompts: 'none',
@@ -46,11 +53,15 @@ export async function claudeAgent(prompt, opts = {}, context = {}) {
     ...(executable ? { pathToClaudeCodeExecutable: executable } : {}),
     ...(opts.schema ? { outputFormat: { type: 'json_schema', schema: opts.schema } } : {}),
   };
+  if (context.onActivity) options.hooks = {
+    PreCompact:[{hooks:[async input => { compactionProgress(input,'running'); return {}; }]}],
+    PostCompact:[{hooks:[async input => { compactionProgress(input,'completed'); return {}; }]}],
+  };
   if (context.hostContext?.canUseTool) {
     options.canUseTool = context.hostContext.canUseTool;
     options.permissionPrompts = 'host';
     options.permissionMode = 'default';
-    options.hooks = {PreToolUse:[{hooks:[async () => ({hookSpecificOutput:{hookEventName:'PreToolUse',permissionDecision:'ask',permissionDecisionReason:'The trusted host permission policy must approve this tool call'}})]}]};
+    options.hooks = {...options.hooks,PreToolUse:[{hooks:[async () => ({hookSpecificOutput:{hookEventName:'PreToolUse',permissionDecision:'ask',permissionDecisionReason:'The trusted host permission policy must approve this tool call'}})]}]};
   }
   if (context.hostContext?.providers?.claude?.mcpServers) options.mcpServers = context.hostContext.providers.claude.mcpServers;
   if (custom?.tools) {
@@ -64,6 +75,9 @@ export async function claudeAgent(prompt, opts = {}, context = {}) {
   for (let repair = 0; repair < 3; repair++) {
   let completed, apiError, rateLimit;
   for await (const message of runQuery({ prompt: task, options })) {
+    if (message.type === 'system' && message.subtype === 'compact_boundary') compactionProgress(message,'completed');
+    if (message.type === 'system' && message.subtype === 'status' && message.status === null && activeCompactions.has(message.session_id) && ['failed','success'].includes(message.compact_result))
+      compactionProgress(message,message.compact_result==='failed'?'failed':'completed');
     if ((message.type === 'assistant' && !message.error) || (message.type === 'stream_event' && message.event?.type === 'message_start')) context.onResponse?.();
     if (message.type === 'assistant' && message.error) apiError = message.error;
     if (message.type === 'rate_limit_event' && message.rate_limit_info?.status === 'rejected') rateLimit = message.rate_limit_info;

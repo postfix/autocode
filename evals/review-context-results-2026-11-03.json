@@ -1,0 +1,159 @@
+{
+  "date": "2026-11-03",
+  "models": {
+    "codex": "gpt-6-luna",
+    "claude": "claude-haiku-5-5"
+  },
+  "cases": [
+    {
+      "provider": "codex",
+      "requestedModel": "gpt-6-luna",
+      "observedModels": [
+        "gpt-6-luna"
+      ],
+      "modelVerified": true,
+      "passed": true,
+      "logicalCalls": 5,
+      "scope": "Matched delegated review/fix context retrieval and closure; not full SF specification quality, native fork or parent UI wake-up.",
+      "checks": {
+        "policyRepaired": true,
+        "clean": true,
+        "noFailures": true,
+        "stageSequence": true,
+        "reportFiles": true,
+        "actualHashes": true,
+        "permittedChanges": true,
+        "initialEvidenceStored": true,
+        "sourceRetired": true,
+        "retrieved": true,
+        "reportReadReceipt": true,
+        "compactPayload": true,
+        "compactParent": true,
+        "hashClosure": true
+      },
+      "reportedUsage": {
+        "inputTokens": 561581,
+        "cachedInputTokens": 430848,
+        "outputTokens": 6748
+      },
+      "templateSha256": "8f1821ee2f40108341bcc70861ec3a9fe46e068b8a4550d70b50f9e17f68e922",
+      "originalResultSha256": "d5b5b4b5370ec437be5233ba2ac2edbb132a7f53ed4ef19595d2a3d3e3cef0ef",
+      "originalImplementationHashes": {
+        "scripts/runtime.mjs": "43e645edd56269fce97b63600adde546cfe8ca6ff4d96c7ddce938d5ff5d806e",
+        "scripts/codex-adapter.mjs": "f40c5a273aa6dabaf87ba38b750c270b2f61f03e2a7668cf9f249fdb62a13b40",
+        "scripts/claude-adapter.mjs": "a13bf31bc2014c50fe1eae301d7c82a4e74438dcc990e0a3206b528b12be0e77",
+        "assets/templates/review-fix-loop.js": "8f1821ee2f40108341bcc70861ec3a9fe46e068b8a4550d70b50f9e17f68e922",
+        "evals/review-context-fixture.mjs": "192f5ba6099be65e194f336e6ccb1b86ccd9bd80bcea6750f878b594b471c92b"
+      },
+      "regradeImplementationHashes": {
+        "evals/review-context-fixture.mjs": "95deeb85a0da6f78df6d193872a1ae176fd16f69a8ba8941943958b7734969bd",
+        "evals/review-context-live.mjs": "a53acc72c75e3ea08eb15435e49e3e228c462e0c119192f08b3a0e072d810c48"
+      },
+      "nativeEvidence": [
+        {
+          "path": "/home/john/.codex/sessions/2026/11/03/rollout-2026-11-03T16-02-12-01a1a1b7-af81-7111-9b72-01a8683e2ac8.jsonl",
+          "sha256": "34ed4be0c8811169b1a9f17c1be26a165cfbd5fbd27cae649cfeeaecb8d27a5c"
+        }
+      ],
+      "toolReceipts": [
+        {
+          "source": "Codex persisted item_completed",
+          "tool": "command_execution",
+          "id": "exec-333c853b-7a91-4512-a9e4-7c728796cc60",
+          "command": "[\"/bin/bash\",\"-lc\",\"cat policy.json && printf '\\\\n--- original red-team report ---\\\\n' && cat reports/round-1-red-team.md && printf '\\\\n--- fix closure ---\\\\n' && cat reports/round-1-red-team-fixes.md && printf '\\\\n--- QA ---\\\\n' && cat reports/round-1-qa.md && printf '\\\\n--- SHA256 ---\\\\n' && sha256sum policy.json && printf '\\\\n--- repo status ---\\\\n' && git status --short\"]",
+          "reportPath": "/home/john/rev/package/autocode-public/.scratch/review-context-live/2026-11-03T14-00-52-472Z-codex-2fae7a4e/project/reports/round-1-red-team.md",
+          "reportPathMatch": true,
+          "containsNonce": true,
+          "success": true,
+          "session": "/home/john/.codex/sessions/2026/11/03/rollout-2026-11-03T16-02-12-01a1a1b7-af81-7111-9b72-01a8683e2ac8.jsonl",
+          "recordOrdinal": 25
+        }
+      ],
+      "artifacts": {
+        "original": ".scratch/review-context-live/2026-11-03T14-00-52-472Z-codex-2fae7a4e/result.json",
+        "strengthened": ".scratch/review-context-live/2026-11-03T14-00-52-472Z-codex-2fae7a4e/regraded-tool-receipts.json"
+      }
+    },
+    {
+      "provider": "claude",
+      "requestedModel": "claude-haiku-5-5",
+      "observedModels": [
+        "claude-haiku-5-5"
+      ],
+      "modelVerified": true,
+      "passed": true,
+      "logicalCalls": 5,
+      "scope": "Matched delegated review/fix context retrieval and closure; not full SF specification quality, native fork or parent UI wake-up.",
+      "checks": {
+        "policyRepaired": true,
+        "clean": true,
+        "noFailures": true,
+        "stageSequence": true,
+        "reportFiles": true,
+        "actualHashes": true,
+        "permittedChanges": true,
+        "initialEvidenceStored": true,
+        "sourceRetired": true,
+        "retrieved": true,
+        "reportReadReceipt": true,
+        "compactPayload": true,
+        "compactParent": true,
+        "hashClosure": true
+      },
+      "reportedUsage": {
+        "inputTokens": 427963,
+        "cachedInputTokens": 364173,
+        "outputTokens": 17897
+      },
+      "templateSha256": "8f1821ee2f40108341bcc70861ec3a9fe46e068b8a4550d70b50f9e17f68e922",
+      "originalResultSha256": "22e74b4b25b5679ce5df01993dbafe03dc2dec6731949a57df435599a075f993",
+      "originalImplementationHashes": {
+        "scripts/runtime.mjs": "43e645edd56269fce97b63600adde546cfe8ca6ff4d96c7ddce938d5ff5d806e",
+        "scripts/codex-adapter.mjs": "f40c5a273aa6dabaf87ba38b750c270b2f61f03e2a7668cf9f249fdb62a13b40",
+        "scripts/claude-adapter.mjs": "a13bf31bc2014c50fe1eae301d7c82a4e74438dcc990e0a3206b528b12be0e77",
+        "assets/templates/review-fix-loop.js": "8f1821ee2f40108341bcc70861ec3a9fe46e068b8a4550d70b50f9e17f68e922",
+        "evals/review-context-fixture.mjs": "192f5ba6099be65e194f336e6ccb1b86ccd9bd80bcea6750f878b594b471c92b"
+      },
+      "regradeImplementationHashes": {
+        "evals/review-context-fixture.mjs": "95deeb85a0da6f78df6d193872a1ae176fd16f69a8ba8941943958b7734969bd",
+        "evals/review-context-live.mjs": "a53acc72c75e3ea08eb15435e49e3e228c462e0c119192f08b3a0e072d810c48"
+      },
+      "nativeEvidence": [
+        {
+          "path": "/home/john/.claude/projects/-home-john-rev-package-autocode-public--scratch-review-context-live-2026-11-03T14-00-52-493Z-claude-450fe381-project/abc47568-d5b7-4f91-99ae-f68ae45cf618.jsonl",
+          "sha256": "a9f08571d2090c9b2f53c029a2dc64c2f852b5c3a251327eac380b1627d30fca"
+        }
+      ],
+      "toolReceipts": [
+        {
+          "source": "Claude persisted tool_result",
+          "tool": "Grep",
+          "id": "toolu_01YNLzsh5yiap1XhPDM2NXb1",
+          "reportPath": "/home/john/rev/package/autocode-public/.scratch/review-context-live/2026-11-03T14-00-52-493Z-claude-450fe381/project/reports/round-1-red-team.md",
+          "reportPathMatch": true,
+          "containsNonce": true,
+          "success": true,
+          "session": "/home/john/.claude/projects/-home-john-rev-package-autocode-public--scratch-review-context-live-2026-11-03T14-00-52-493Z-claude-450fe381-project/abc47568-d5b7-4f91-99ae-f68ae45cf618.jsonl",
+          "recordUuid": "2745004e-36e2-4128-93e4-86ab02e7dda8"
+        },
+        {
+          "source": "Claude persisted tool_result",
+          "tool": "Bash",
+          "id": "toolu_01U8EPZYbLn9NRGbStTXtPDw",
+          "command": "python3 -I -c '\nimport json,sys\nraw=open(\"policy.json\",\"rb\").read()\nprint(\"bytes\",len(raw),\"raw\",raw)\ndef hook(pairs):\n    keys=[k for k,_ in pairs]\n    assert len(keys)==len(set(keys)), \"duplicate keys\"\n    return dict(pairs)\nobj=json.loads(raw.decode(\"utf-8\"),object_pairs_hook=hook)\nreq={\"minQty\":1,\"expressCents\":1299}\nprint(\"equal\",obj==req, \"keys\",sorted(obj), \"types\",{k:type(v).__name__ for k,v in obj.items()})\nprint(\"bool-free\", all(type(v) is int for v in obj.values()))\n' && sha256sum policy.json && git -C . status --short -- policy.json reports packet.md 2>/dev/null; echo \"git-policy-status-done\"; cat reports/round-1-red-team.md",
+          "reportPath": "/home/john/rev/package/autocode-public/.scratch/review-context-live/2026-11-03T14-00-52-493Z-claude-450fe381/project/reports/round-1-red-team.md",
+          "reportPathMatch": true,
+          "containsNonce": true,
+          "success": true,
+          "session": "/home/john/.claude/projects/-home-john-rev-package-autocode-public--scratch-review-context-live-2026-11-03T14-00-52-493Z-claude-450fe381-project/abc47568-d5b7-4f91-99ae-f68ae45cf618.jsonl",
+          "recordUuid": "1bda7193-c3c8-49e4-9e60-be6a2b09d67b"
+        }
+      ],
+      "artifacts": {
+        "original": ".scratch/review-context-live/2026-11-03T14-00-52-493Z-claude-450fe381/result.json",
+        "strengthened": ".scratch/review-context-live/2026-11-03T14-00-52-493Z-claude-450fe381/regraded-tool-receipts.json"
+      }
+    }
+  ],
+  "evidenceNote": "Two original paid attempts retained. A stricter oracle added genuine matching native tool-read receipts from their persisted sessions; no paid reruns. Future in-stream receipt capture is implemented but not itself rerun live. No fork, context-limit or cost-savings benchmark."
+}

@@ -42,6 +42,6 @@ These checks were run outside the tool sandbox because the restricted tool envir
 
 ## Integrated runtime recheck
 
-After recovery, spawn hooks and prefix coordination were integrated, the unchanged portable witness was rerun on runtime SHA256 `a4c4456a1983f3a8d7edc7f45bbcb71434969e2e6439d9e18011e296918f49f8`. Both helpers again preserved `[[1],[2]]` with two adapter calls, exit 0. Exact output: `.scratch/replay-audit/after-final.json`. This remains the dirty working tree at the HEAD identified above; no committed release or Factory installation is implied.
+After recovery, spawn hooks, prefix coordination and provider/shared-ledger contract validation, embedded discovery and live-owner replay protection were integrated, the unchanged portable witness was rerun on runtime SHA256 `feb776697b9e61871fa95d731a5a9fef33cf8bd0a33d4bd45015cdf5ccbdc547`. Both helpers again preserved `[[1],[2]]` with two adapter calls, exit 0. Exact output: `.scratch/replay-audit/after-final.json`. This remains the dirty working tree at the HEAD identified above; no committed release or Factory installation is implied.
 
 The final integrated suite passed 249 tests, with no failures or skips. Full current runtime diff is `.scratch/replay-audit/runtime-final.diff`.

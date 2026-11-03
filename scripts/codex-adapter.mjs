@@ -148,6 +148,8 @@ export async function codexAgent(prompt, opts = {}, context = {}) {
       const item=event.item;
       if (['item.started','item.updated','item.completed'].includes(event.type) && ['reasoning','agent_message','command_execution','mcp_tool_call','file_change','web_search','todo_list'].includes(item?.type)) context.onResponse?.();
       if(event.type==='item.completed'&&item?.type==='agent_message')finalResponse=item.text;
+      if(['item.started','item.completed'].includes(event.type)&&item?.type==='context_compaction')
+        context.onActivity?.({id:item.id,tool:'context_compaction',status:item.status==='failed'?'failed':event.type==='item.started'?'running':'completed'});
       if(['item.started','item.completed'].includes(event.type)&&['command_execution','mcp_tool_call','file_change','error'].includes(item?.type)) {
         const failed=item.status==='failed'||typeof item.exit_code==='number'&&item.exit_code!==0||item.type==='error';
         context.onActivity?.({id:item.id,tool:item.type==='mcp_tool_call'?item.tool:item.type,status:failed?'failed':event.type==='item.started'?'running':'completed',exitCode:item.exit_code,message:failed?item.aggregated_output??item.error?.message??item.message:undefined});

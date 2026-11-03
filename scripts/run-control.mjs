@@ -3,7 +3,7 @@ import {spawn} from 'node:child_process';
 import {randomUUID, timingSafeEqual} from 'node:crypto';
 import {mkdir,readFile,writeFile,open,link,rename,chmod,unlink,rmdir,realpath,readdir,lstat} from 'node:fs/promises';
 import {join,resolve} from 'node:path';
-import {safeText} from './run-stats.mjs';
+import {safeText,readRunStatus} from './run-stats.mjs';
 
 const terminal=new Set(['completed','failed','cancelled']);
 const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
@@ -21,7 +21,11 @@ async function persist(file,state,{exclusive=false}={}){
 
 export async function controlRun(directory,command,{agent}={}){
   if(!['status','pause','resume','cancel','skip','retry'].includes(command))throw Error('unknown workflow control');
-  const state=JSON.parse(await readFile(join(resolve(directory),'control.json'),'utf8'));
+  const state=JSON.parse(await readFile(join(resolve(directory),'control.json'),'utf8').catch(async error=>{
+    if(error.code!=='ENOENT')throw error;
+    await readFile(join(resolve(directory),'runner.json'),'utf8');
+    throw Error('This embedded workflow is controlled by its host; CLI process controls require autocode run');
+  }));
   if(terminal.has(state.state)){if(command==='status'||command==='cancel'&&state.state==='cancelled')return publicState(state);throw Error(`workflow is already ${state.state}`);}
   if (state.transport === 'file') {
     const id = randomUUID(), request = join(state.commandDirectory, `request-${id}.json`), reply = join(state.commandDirectory, `reply-${id}.json`);
@@ -63,6 +67,11 @@ export async function superviseRun(command,{runDir,runId,project,provider,forwar
   if(runId)for(const name of ['run.json','control.json']){
     const saved=await readFile(join(runDir,name),'utf8').then(JSON.parse).catch(error=>{if(error.code==='ENOENT')return {};throw error;});
     if(saved.runId&&saved.runId!==runId)throw Error(`run directory already belongs to workflow ${safeText(saved.runId)}; use its recorded ID with --resume or start in a new directory`);
+  }
+  const embedded=await readFile(join(runDir,'runner.json'),'utf8').then(JSON.parse).catch(error=>{if(error.code==='ENOENT')return null;throw error;});
+  if(embedded){
+    const prior=await readRunStatus(runDir);
+    if(prior.controllable===false&&prior.state==='running')throw Error('Embedded workflow is still running; resume only after it ends');
   }
   const lock=join(runDir,'controller.lock');
   await mkdir(lock).catch(error=>{if(error.code==='EEXIST')throw Error('this run already has a controller; inspect it before restarting');throw error;});
@@ -154,6 +163,7 @@ async function startRun(command,{runDir,runId,project,provider,forwardOutput,con
         if(error.code!=='EEXIST')throw error;
         const previous=JSON.parse(await readFile(ref,'utf8'));
         if(previous.project!==project||previous.runDir!==registration.runDir)throw Error('workflow ID already registered to another run');
+        await persist(ref,registration);
       });
     }
     try {

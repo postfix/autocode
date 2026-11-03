@@ -2,6 +2,8 @@
 
 Read [quality-patterns.md](quality-patterns.md) before designing stages. It carries the recovered Ultracode guidance on pipelines, barriers, independent verification, completeness, and bounded discovery. Choose the work list and the expected result before spawning agents. When a later phase needs the host agent to interpret earlier evidence, run separate workflows and inspect each result before writing the next.
 
+The recovered reference describes Claude's embedded host. Autocode does not automatically transfer that host's loaded instruction set, live MCP connections, permissions or model. A trusted integration supplies `hostContext` (or serializable `--context`) for these supported fields. The SDK may load its own project configuration; that is not proof of inheriting the parent's exact context. Workflow source cannot grant itself new host authority.
+
 Begin each `.js` script with literal metadata:
 
 ```js
@@ -32,10 +34,29 @@ Use unique prompts and JSON args for reproducible resume. The journal caches suc
 
 `Date.now()`, `new Date()` without arguments, and `Math.random()` throw inside workflows because they would make replay depend on when the run was resumed. Pass a timestamp or seed in `args` when needed.
 
+## Context and compaction
+
+Each `agent()` receives its assigned prompt, explicit trusted host instructions, custom-agent instructions and configured tools/MCP. When executed live rather than replayed, it starts a fresh provider conversation. Earlier results reach another agent only when the workflow includes them in its prompt; `pipeline()` passes JavaScript values to stages, not an implicit conversation history. Include relevant evidence and source paths rather than concatenating every prior transcript. Keep stage results compact and schema-validated: conclusions, evidence/artifact references, uncertainty and unresolved scope. Do not include raw command transcripts or tool-output dumps unless a downstream task actually needs them. Within one agent, its native tool history remains part of that conversation; schema repairs intentionally retain that same task history. Input caching can reduce processing cost, but it does not remove content from the context window. The standalone output-token budget does not bound all input-token cost. See [context-forking research](../docs/CONTEXT-FORKING-RESEARCH.md).
+
+Delegate conversation compaction belongs to the native provider engine. Autocode forwards available compaction progress into activity tracking; it does not implement a second summarizer or silently truncate prompts. Engine settings determine thresholds and whether compaction is enabled. Compaction can still fail when the initial prompt or fixed instructions exceed the available window.
+
+There is no automatic transfer of an unfinished delegate to a replacement agent. Schema repairs retain the same Codex thread or resume the Claude session; stall/lost-reply retries start a fresh attempt with the original assigned task. An exhausted context is reported as failure, not blindly retried with the same oversized input. Inspect failures and the journal, reduce the task or material passed, and author a continuation using completed evidence.
+
+`--resume` replays completed workflow results from `run.json` and `journal.jsonl`; it does not restore a delegate's full conversation or the parent agent's memory. Preserve the script path, args, run ID, run directory, relevant evidence paths and trusted context reference in the parent host's handoff. Re-supply host context on resume; it is not serialized into a portable parent-session capsule. If the parent compacts while a background workflow continues, rediscover it through the project controls and inspect its durable status/results.
+
+
 Autocode reimplements observed local workflow behavior through native Codex and Claude SDK adapters. This public package contains the runnable implementation and authored templates.
 
-Trusted host context can supply inherited and forced model/effort settings, project instructions, custom agents, MCP servers, permission callbacks, spawn denial, quota waiting, and a shared budget. Supply context through `--context <file>` for JSON data or `runWorkflow({hostContext})` for callbacks. Every context needs `id` and `revision`; change the revision when host policy or context changes. The runner never treats task text as authority to expand these permissions.
+Trusted host context can supply inherited and forced model/effort settings, project instructions, custom agents, MCP servers, permission callbacks, spawn denial, quota waiting, and a shared budget. Supply context through `--context <file>` for JSON data or `runWorkflow({hostContext})` for callbacks. Every context needs `id` and `revision`; change the revision when host policy or context changes. The runner never treats task text as authority to expand these permissions. Embedded calls with nonempty `hostContext.providers` configuration must declare `defaultProvider` or a per-call `provider`; an omitted provider is rejected rather than silently bypassing its model or policy settings. Shared budget callbacks are synchronous: `spent()` must return a nonnegative safe integer, and `charge(delta)` must complete synchronously. The trusted host owns the ledger accounting.
 
 Use `autocode workflows --json` to discover `whenToUse` metadata without running scripts. Invoke the returned `reference` with `workflow(reference, args)`. Trusted host registries can restrict child execution to named entries with `namedWorkflowsOnly: true`. Codex supports the native Bash denial; other unsupported restrictions remain explicit errors.
 
-New run journals use `.autocode/runs`; project controls also discover legacy `.codex/autocode-runs`. For asynchronous execution, run `autocode run workflow.js --background` and inspect the returned ID with `autocode status <id>`. Embedded hosts can receive `onComplete` and `onFailure` callbacks. Export/import journal snapshots with the exact commands in USAGE.md; preserve worktree contents separately.
+New run journals use `.autocode/runs`; project controls also discover legacy `.codex/autocode-runs`. For asynchronous execution, use a host-native background agent/task with mandatory completion/failure delivery, running the CLI in the foreground. Bare `--background` is rejected. Custom embedded notification integrations require paired `onComplete` and `onFailure` callbacks; ordinary awaited calls return through their promise. Export/import journal snapshots with the exact commands in USAGE.md; preserve worktree contents separately.
+
+## Required completion delivery
+
+Every launched workflow needs a completion owner before it starts. An awaited API call or foreground CLI returns success/failure to its caller. If the originating Codex/Claude session will continue while work runs, use its native background agent/task lifecycle to deliver both terminal outcomes and monitor process death. The owner must retain the run ID and directory, inspect `result` and `failures`, and report the outcome to the originating session. If native delivery is unavailable, keep waiting through the host tool's execution session until it settles.
+
+Custom host notification integrations must supply both `hostContext.onComplete(output)` and `hostContext.onFailure({runId,error})` as functions. The runner rejects partial/malformed pairs before creating run files. Completion callbacks run after terminal journal state is saved; callback delivery errors do not rerun completed work or replace its original error. Callbacks are trusted integration points: writing a log, file or status record does not establish delivery to the main agent. In-process callbacks alone cannot survive a killed host process; use the independent native lifecycle monitor for that case.
+
+Workflow JavaScript templates describe stages and results; they cannot create the originating host's notification channel. Their launch contract is therefore mandatory: await the result, or register the native background lifecycle before execution. Raw CLI detachment without that route is refused rather than silently leaving the session uninformed.

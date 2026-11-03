@@ -1,3 +1,15 @@
+# Current context and completion coverage — 2026-11-03
+
+The [coverage review](COVERAGE.md) found and fixed stale-hash/blank-reference false-clean cases, unpinned authoring models and a weak keyword oracle. The current deterministic suite passes 340/340, zero skips. Line/branch figures are explicitly limited to loaded production scripts.
+
+The public review/fix template passed five real stages each on `gpt-6-luna` and `claude-haiku-5-5`: actual policy repair, independently checked SHA256 closure, compact next-stage/parent payloads and hidden evidence recovered from a referenced report. Exact models and genuine native report-read receipts are retained in [the matched results](review-context-results-2026-11-03.json). These are functional evaluations, not SF-scale quality or cost measurements.
+
+[Native parent delivery](parent-completion-results-2026-11-03.json) passed actual foreground CLI success/failure under a native Codex background owner and a Haiku native background owner. Claude's matching task notification preceded the parent's output read. The proof is native lifecycle behavior, not desktop UI rendering or killed-owner fault injection. The [Luna-pinned authoring smoke](authoring-smoke-results-2026-11-03.json) also passed; its configured-model fields are not mislabeled as API observations.
+
+Earlier receipts below are preserved historical evidence, not reruns of every current behavior.
+
+---
+
 # Corrected native-platform result — 2026-11-02
 
 The actual native Codex environment also passed without MCP file access. A fresh Luna agent read the current skill, authored the workflow, executed the actual CLI using the normal approved-command path, and returned the verifier's report. All three delegates remained read-only and used forced `gpt-6-luna`. The independent hidden oracle verified all four defects, no false positives, unchanged source, parallel reviewers followed by skeptical verification, and matching verifier/workflow/parent reports. Native command/file-tool execution is recorded in the journal.

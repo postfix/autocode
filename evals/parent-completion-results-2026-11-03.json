@@ -1,0 +1,99 @@
+{
+  "date": "2026-11-03",
+  "codex": {
+    "requestedParentModel": "gpt-6-luna",
+    "observedParentModel": null,
+    "nativeOwnerTask": "/root/native_parent_completion_eval",
+    "nativeCompletionReceivedByOriginatingSession": true,
+    "actual": {
+      "success": {
+        "exitCode": 0,
+        "result": {
+          "marker": "ee7854b0-bb68-4deb-b1bb-c8e9655e2e74",
+          "ok": true
+        }
+      },
+      "failure": {
+        "exitCode": 1,
+        "error": "SEEDED_COMPLETION_FAILURE_ee7854b0-bb68-4deb-b1bb-c8e9655e2e74 (retained run-failed journal; CLI emitted no stderr)",
+        "journalFailed": true
+      }
+    },
+    "passed": true,
+    "artifact": ".scratch/native-parent-completion/result.json",
+    "scope": "Actual native Codex background-owner lifecycle with foreground CLI success and seeded failure; model selected explicitly by host tool, API-reported model metadata unavailable."
+  },
+  "claude": {
+    "requestedParentModel": "claude-haiku-5-5",
+    "requestedOwnerModel": "claude-haiku-5-5",
+    "parentSession": "31ed4876-8925-40ca-ba70-52f2a10249e8",
+    "ownerTaskId": "a19a81d99119e1ae5",
+    "started": [
+      {
+        "taskId": "a19a81d99119e1ae5",
+        "runId": "0mw0rr1dm-a07b7d41",
+        "toolUseId": "toolu_019P11KUHMpK65rhT8NcZZg9",
+        "sessionId": "31ed4876-8925-40ca-ba70-52f2a10249e8",
+        "subagentType": "completion-owner",
+        "isBackgrounded": true,
+        "taskType": "local_agent"
+      }
+    ],
+    "proof": {
+      "ownerTaskId": "a19a81d99119e1ae5",
+      "successExitCode": 0,
+      "successMarker": "1ca8fdc6-e8ea-4502-83f9-d11ca9162f47",
+      "failureExitCode": 1,
+      "failureObserved": true
+    },
+    "actual": {
+      "success": {
+        "state": "completed",
+        "exitCode": 0,
+        "result": {
+          "marker": "1ca8fdc6-e8ea-4502-83f9-d11ca9162f47",
+          "ok": true
+        },
+        "agentCalls": 0,
+        "resultSource": "native owner Bash tool_result transcript"
+      },
+      "failure": {
+        "state": "failed",
+        "exitCode": 1,
+        "message": "SEEDED_COMPLETION_FAILURE_1ca8fdc6-e8ea-4502-83f9-d11ca9162f47",
+        "agentCalls": 0
+      }
+    },
+    "reportedModels": [
+      "claude-haiku-5-5"
+    ],
+    "transcriptModels": [
+      {
+        "file": "sdk-state/projects/-home-john-rev-package-autocode-public--scratch-native-claude-completion-project/31ed4876-8925-40ca-ba70-52f2a10249e8/subagents/agent-a19a81d99119e1ae5.jsonl",
+        "models": {
+          "claude-haiku-5-5": 4
+        }
+      },
+      {
+        "file": "sdk-state/projects/-home-john-rev-package-autocode-public--scratch-native-claude-completion-project/31ed4876-8925-40ca-ba70-52f2a10249e8.jsonl",
+        "models": {
+          "claude-haiku-5-5": 9
+        }
+      }
+    ],
+    "passed": true,
+    "scope": "Native SDK engine lifecycle proof, not a separate desktop/UI notification claim",
+    "notifications": [
+      {
+        "taskId": "a19a81d99119e1ae5",
+        "runId": "0mw0rr1dm-a07b7d41",
+        "toolUseId": "toolu_019P11KUHMpK65rhT8NcZZg9",
+        "sessionId": "31ed4876-8925-40ca-ba70-52f2a10249e8",
+        "status": "completed",
+        "outputFile": "/tmp/claude-1000/-home-john-rev-package-autocode-public--scratch-native-claude-completion-project/31ed4876-8925-40ca-ba70-52f2a10249e8/tasks/a19a81d99119e1ae5.output"
+      }
+    ],
+    "artifact": ".scratch/native-claude-completion/result.json"
+  },
+  "scopeNote": "Both parents received native lifecycle completion and workflow success/failure evidence. In-process callback unit tests are separate. No desktop UI visual proof or killed-native-owner injection is claimed."
+}

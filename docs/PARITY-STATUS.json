@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-02",
+  "date": "2026-11-03",
   "source_version": "Claude Code 2.1.310",
   "target": "Local Linux behavioral parity on Codex and Claude with explicit trusted host context and optional supported provider restrictions",
   "full_parity": false,
@@ -32,7 +32,7 @@
       "id": 5,
       "requirement": "Shared turn budgets",
       "status": "implemented",
-      "evidence_or_remaining_work": "Trusted embedded hosts supply a shared synchronous ledger. Standalone scope is explicitly runner-owned usage."
+      "evidence_or_remaining_work": "Trusted embedded hosts supply a shared synchronous ledger; invalid/thenable reads and asynchronous charges fail explicitly. Standalone scope is runner-owned reported usage, not a hard spend cap."
     },
     {
       "id": 6,
@@ -224,7 +224,7 @@
       "id": 29,
       "requirement": "Model and effort defaults",
       "status": "implemented",
-      "evidence_or_remaining_work": "Host forced settings, explicit choices, custom-agent defaults and inherited defaults resolved before cache identity."
+      "evidence_or_remaining_work": "Host forced settings, explicit choices, custom-agent defaults and inherited defaults resolve before cache identity. Embedded provider policy requires a declared invocation provider."
     },
     {
       "id": 30,
@@ -260,7 +260,7 @@
       "id": 35,
       "requirement": "Background integration",
       "status": "implemented",
-      "evidence_or_remaining_work": "Linux detached supervisor, durable logs and trusted completion/failure callbacks implemented and tested."
+      "evidence_or_remaining_work": "Mandatory awaited or native-host-owned completion delivery; paired callbacks validated before startup and terminal journal durable before notification. Bare unattended CLI --background is rejected. Native Codex and Haiku lifecycle proofs cover actual CLI success/failure."
     },
     {
       "id": 36,
@@ -284,13 +284,13 @@
       "id": 39,
       "requirement": "Authoring and examples",
       "status": "implemented",
-      "evidence_or_remaining_work": "Recovered prompt variants active; exhaustive review uses structured file/line evidence, skeptical judges, stable finding dedup and completeness-driven bounded rounds."
+      "evidence_or_remaining_work": "Recovered assets unchanged; structured basic findings and evidence verdicts; stable invariant IDs retain same-line defects; no arbitrary default exhaustive cap; missing panels and exhausted budgets remain incomplete; count/research published examples execute in tests. Compact review/fix context uses open indexes, current targeted details and retrievable report references; no growing history in stage or parent payload. Latest-subject and nonblank-reference guards tested."
     },
     {
       "id": 40,
       "requirement": "Live validation",
       "status": "implemented",
-      "evidence_or_remaining_work": "Both providers and native transport checked live for applicable text/schema/MCP/write/replay/model cases; current skill installed privately passed real authoring+CLI; packaged lifecycle commands, exact tool pools and host-denied Read verified. Exact host UI remains outside target."
+      "evidence_or_remaining_work": "Both providers and native transport checked live for applicable text/schema/MCP/write/replay/model cases; current skill installed privately passed real authoring+CLI; packaged lifecycle commands, exact tool pools and host-denied Read verified. Exact host UI remains outside target. New matched context repair/retrieval eval passes on exact observed Luna and Haiku 5.5, with native tool receipts; native parent delivery evaluated separately. See evals/COVERAGE.md."
     }
   ],
   "evidence": [
@@ -298,26 +298,53 @@
     "../evals/live-parity-2026-11-02.json",
     "AUTO-01-HANDOFF.md",
     "RECOVERY-PARITY-EVIDENCE.md",
-    "SCHEMA-PARITY-EVIDENCE.md"
+    "SCHEMA-PARITY-EVIDENCE.md",
+    "../evals/COVERAGE.md",
+    "../evals/review-context-results-2026-11-03.json",
+    "../evals/parent-completion-results-2026-11-03.json",
+    "../evals/authoring-smoke-results-2026-11-03.json"
   ],
   "codex_enforcement_reference": "https://learn.chatgpt.com/docs/hooks#tool-coverage",
   "tested_source": {
-    "head": "723826be19934b2bba6331510be9ec33b101315e",
+    "head": "22c25839a11e5c6e0ee5fa47a568fa546f4607a2",
     "working_tree": "uncommitted",
     "sha256": {
-      "scripts/runtime.mjs": "a4c4456a1983f3a8d7edc7f45bbcb71434969e2e6439d9e18011e296918f49f8",
-      "scripts/codex-adapter.mjs": "3af5bd2ed8694f56945341e02d8e119cb1c6fcd2c92ab7c663bcfe2c4ca1f655",
-      "scripts/claude-adapter.mjs": "b298cd5fed811146f0d7f360dcc1589686a003ac0a9a0017a9bbe4c8eaf50ebd",
-      "scripts/codex-app-server.mjs": "358ceeaebfaaef0070373339a1d03ee9aa4e7fc055c98ef44f38771fd0b70207",
+      "scripts/runtime.mjs": "feb776697b9e61871fa95d731a5a9fef33cf8bd0a33d4bd45015cdf5ccbdc547",
+      "scripts/codex-adapter.mjs": "f40c5a273aa6dabaf87ba38b750c270b2f61f03e2a7668cf9f249fdb62a13b40",
+      "scripts/claude-adapter.mjs": "2d8738728e41a2e0a6d51c38a75be847a2042c3bf9dfd80a9ad58f40039f528b",
+      "scripts/codex-app-server.mjs": "dbdca87b9151a331222edd7aa2e57cb608f589f702c1bc89c97b0472c389543f",
       "scripts/schema.mjs": "3f5eb7225ecb506c1ab219b6b8c57e3feb351388e699a6116bf28d8143d90eec",
-      "scripts/run-control.mjs": "5fa7d464efc1b682964cdf50926d3373c1cb7cf9b0e6f39fac7fe484f8e467c3",
-      "scripts/autocode.mjs": "3cb69f920029032a99d3ec7caaaa8f46ef17e1b372a1f330083759e789df3a94"
+      "scripts/run-control.mjs": "471adaa1cf5658232e07557f317f7986940138d53a61446370ba57e4573b14f8",
+      "scripts/autocode.mjs": "cc2d2d6f3f89d723671ba7658ab942a790fc618422f2590805d4e72e6a64fa56",
+      "scripts/subagent-prompt.mjs": "0771db1c755d95b60e102d1a739e84a85eefbe81c5a6d601aa080b2d638a4fc1",
+      "assets/templates/review-and-verify.js": "746bdf890b6ba6449a36843970f6d5d7ae28c917d20406f9ba599f5ccdf293b2",
+      "assets/templates/exhaustive-review.js": "2cdf64f8bd7e9df99a427c233303b6ab7e1aed4194c38bb498417fd3d7de5db9",
+      "SKILL.md": "f1142858a491d486ccfe296900342af3ee70e9c43f9bda8cd6fe837b1017ee5c",
+      "references/authoring.md": "3975dc95b931156f2504cbbf011d72942facbe34ae3aaa96a172522b16bdd2bf",
+      "references/quality-patterns.md": "3ade5dde1df4e84862b64fc0b3f852d5737a8655c70a3b323da219de0e58f825",
+      "USAGE.md": "6fef089a63f00dff3820a6e30851b5ceb360f0f200d292c65aca9b55dad2100d",
+      "scripts/run-stats.mjs": "788f9e6a9f659b426c8ceba50e5bf85fe66b1fba8eefa260ceeda6dd2661fd17",
+      "docs/CONTEXT-FORKING-RESEARCH.md": "185067475bc1b145863253517c403355bc29d6e61ef0c102bbcdeeeac5dfc0e0",
+      "evals/embedded-discovery-live.mjs": "804c68f2dc71ad2b0c4ff6c3a8e3307efd17360d52e25384db64545f549e9d92",
+      "scripts/verify-release.mjs": "69fa364f3506688c7d70ddfd5330035ed035c12adb93b8aa3a650294d7652c28",
+      "assets/templates/review-fix-loop.js": "8f1821ee2f40108341bcc70861ec3a9fe46e068b8a4550d70b50f9e17f68e922",
+      "evals/live-skill.mjs": "0969935e273f84c022a48d35913725a756c92a1772aafa82862809dfcce04f03",
+      "evals/review-context-live.mjs": "a53acc72c75e3ea08eb15435e49e3e228c462e0c119192f08b3a0e072d810c48",
+      "evals/review-context-fixture.mjs": "95deeb85a0da6f78df6d193872a1ae176fd16f69a8ba8941943958b7734969bd"
     },
     "full_suite": {
-      "passed": 249,
+      "passed": 340,
       "failed": 0,
       "skipped": 0,
-      "log": ".scratch/full-task-regressions.log"
+      "test_file_concurrency": 4,
+      "log": ".scratch/coverage-review-final-v3.log"
+    },
+    "coverage": {
+      "scope": "loaded scripts/*.mjs only; excludes native engines, hooks, VM template bodies and separately executed live entry points",
+      "lines_percent": 99.24,
+      "branches_percent": 86.57,
+      "functions_percent": 87.05,
+      "log": ".scratch/coverage-review-final-v3.log"
     }
   },
   "full_original_parity": false,
@@ -344,5 +371,93 @@
       "passed": true,
       "blind_task_attempt": 1
     }
+  },
+  "prose_audit": {
+    "date": "2026-11-03",
+    "comparison": "PROSE-DIFF.md",
+    "original_assets_unchanged": 8,
+    "live_models_rerun": false,
+    "unbounded_suite_note": "One real-process pause-confirmation timeout under heavy host load; unchanged focused controls passed 8/8, and all tests passed with four concurrent test files. No production timeout increased.",
+    "rationale_reassessment": "PROSE-DIFF.md records each corrected defect and rationale for retained adaptations, with no live near-window stress claim."
+  },
+  "context_lifecycle_audit": {
+    "date": "2026-11-03",
+    "evidence": "PROSE-DIFF.md#context-window-overflow-and-handoff-audit",
+    "native_compaction": "Engine owned; native start/end and tracked failed/success compaction status resume activity/watchdog correctly. Genuine-model response warmup remains separate. Exact native thresholds and forced-overflow success are not claimed.",
+    "overflow": "Known typed native cause retained in failed journal entries; no blind retry of the same oversized prompt.",
+    "handoff": "Completed workflow results replay; no automatic transfer of unfinished native conversations or parent memory.",
+    "live_near_window_stress_test": false,
+    "research": "CONTEXT-FORKING-RESEARCH.md",
+    "handoff_policy": "Fresh explicit result-only stages by default; native fork is an optional future API, not automatic history transfer."
+  },
+  "embedded_discovery": {
+    "status": "implemented",
+    "platform": "Linux process-verified discovery; other OS execution preserved without invented process verification",
+    "coverage": [
+      "embedded API and CLI runs",
+      "custom journal paths",
+      "dead/reused PID detection",
+      "interrupted agents and unknown end times",
+      "live resume rejection",
+      "CLI/embedded ownership transitions",
+      "private read-only-project fallback",
+      "stale/unreadable registry handling"
+    ],
+    "tests": [
+      "../tests/embedded-discovery.test.mjs",
+      "../tests/embedded-status.test.mjs",
+      "../tests/ownership-transition.test.mjs",
+      "../tests/discovery-permissions.test.mjs"
+    ],
+    "live_receipt": "../evals/embedded-discovery-results-2026-11-03.json",
+    "controls": "Embedded run status is host-controlled; CLI process controls require supervised autocode run and never signal the entire embedding host."
+  },
+  "context_passing_fix": {
+    "template": "../assets/templates/review-fix-loop.js",
+    "stage_payloads": "compact open-finding indexes, current targeted fixer detail, latest change reference and report pointers",
+    "parent_payload": "status, unresolved finding index, report references and final subject hash",
+    "no_accumulated_history": true,
+    "preserves_required_review_scope": true,
+    "latest_changed_subject_guard": true,
+    "blank_references_rejected": true,
+    "sf_script": "/home/john/go/src/github.com/agenthands/software-factory/.scratch/sf-proposal-review-loop-20261103/workflow.js",
+    "sf_original_backup": "/home/john/go/src/github.com/agenthands/software-factory/.scratch/sf-proposal-review-loop-20261103/workflow.before-context-fix.js",
+    "sf_script_sha256": "e0beb139430c45afabdac8af82750b80a256d4a5aeec346fbbec80203001baed",
+    "sf_applied_regressions_passed": 8,
+    "existing_execution_restarted": false,
+    "parent_progress": "bounded sanitized label; no full prompt body"
+  },
+  "completion_delivery": {
+    "contract": "awaited return or native host-owned background task registered before launch",
+    "notification_callback_pair_required": true,
+    "terminal_journal_before_notification": true,
+    "bare_cli_background": "rejected before startup; it lacks originating-session delivery",
+    "native_proofs": "../evals/parent-completion-results-2026-11-03.json",
+    "limits": "Callbacks alone do not cover killed hosts; desktop UI and hard-killed native-owner fault injection are not claimed."
+  },
+  "coverage_review": {
+    "document": "../evals/COVERAGE.md",
+    "matched_context_results": "../evals/review-context-results-2026-11-03.json",
+    "models": {
+      "codex": "gpt-6-luna",
+      "claude": "claude-haiku-5-5"
+    },
+    "terra_evaluated": false,
+    "matched_model_observations_verified": true,
+    "native_report_read_receipts_verified": true,
+    "additional_defects_fixed": [
+      "stale hash agreement after newer fix",
+      "blank subject/report references",
+      "unselected evaluator model defaults",
+      "keyword-only counterexample oracle",
+      "model-only retrieval claim without actual tool read",
+      "failed compaction watchdog suspension",
+      "full prompt body in parent progress",
+      "authoring eval reading installed rather than checkout skill"
+    ],
+    "global_runtime_updated": false,
+    "installed_runtime_sha256": "4888aa4100fcedc0a63f5560b8a37db2ad2378bd2fb69c99e3d05806d5a57431",
+    "installed_runtime_updated": false,
+    "source_authoring_skill_read_verified": true
   }
 }

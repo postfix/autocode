@@ -106,3 +106,14 @@ test('typed API envelopes accept nullable or absent API error codes without pars
   try{await assert.rejects(codexAgent('hello',{},context),error=>error.kind==='api-error'&&error.httpStatusCode===500&&error.apiError.type==='server_error');}finally{await rm(context.runDir,{recursive:true,force:true});}
  }
 });
+
+test('native contextCompaction items retain task progress through the public adapter',async()=>{
+ const context=await fixture(initialize+`else if(request.method==='turn/start'){send({id:request.id,result:{turn:{id:'turn-1'}}});send({method:'item/started',params:{threadId:'thread-1',turnId:'turn-1',item:{id:'native-compact',type:'contextCompaction'}}});send({method:'item/completed',params:{threadId:'thread-1',turnId:'turn-1',item:{id:'native-compact',type:'contextCompaction'}}});send({method:'item/completed',params:{threadId:'thread-1',turnId:'turn-1',item:{id:'answer',type:'agentMessage',text:'continued'}}});send({method:'thread/tokenUsage/updated',params:{threadId:'thread-1',turnId:'turn-1',tokenUsage:{last:{inputTokens:1,cachedInputTokens:0,outputTokens:1}}}});send({method:'turn/completed',params:{threadId:'thread-1',turn:{id:'turn-1',status:'completed'}}});}`);
+ const activity=[];let responses=0;
+ try{
+  const output=await codexAgent('Continue',{}, {...context,onActivity:event=>activity.push(event),onResponse:()=>responses++});
+  assert.equal(output.result,'continued');
+  assert.deepEqual(activity,[{id:'native-compact',tool:'context_compaction',status:'running'},{id:'native-compact',tool:'context_compaction',status:'completed'}]);
+  assert.equal(responses,1,'only the actual agent message releases prefix warmup');
+ }finally{await rm(context.runDir,{recursive:true,force:true});}
+});

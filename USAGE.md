@@ -88,9 +88,17 @@ Start from [parallel scout](assets/templates/parallel-scout.js), [review and ver
 
 ## Background and individual agent controls
 
-On Linux, `autocode run inspect.js --background` returns `{runId, runDir, state}` after startup. Use the existing status, pause, resume and cancel commands for that ID. `stdout.log` and `stderr.log` retain the program output.
+For session-owned background work, run the foreground CLI inside a host-native background agent/task that reports success and failure to the originating session. The native lifecycle must be registered before execution and detect process death. Bare `--background` is rejected: detached startup plus logs is not completion delivery. Without native background delivery, keep the foreground command or API promise awaited.
 
 Use `autocode skip <id> --agent 1` to return `null` from one active agent call, or `autocode retry <id> --agent 1` to cancel and replace its attempt. Requests are authenticated by the controller and acknowledged by the worker. Retry is bounded; an agent that does not acknowledge cancellation is not restarted concurrently.
+
+## Embedded workflow discovery
+
+On Linux, the shared `runWorkflow()` runner registers embedded calls as well as CLI calls, including runs whose journal directory is outside the project. Run `autocode ps` from the workflow's `cwd` project. Status uses the owner PID and Linux process start identity; a dead or reused PID marks an unfinished run interrupted. A journal alone does not establish liveness. Completed and interrupted runs remain inspectable by ID but do not appear as active.
+
+Registration normally uses `.autocode/runs`. For a read-only project it falls back to the private `$XDG_STATE_HOME/autocode/projects/<project-hash>/runs` registry, or `~/.local/state/autocode/projects/<project-hash>/runs`. The project and run directory remain explicitly associated. Owner/reference files are private and published atomically.
+
+`ps` shows `Controls: host` for embedded calls (`controllable: false` in JSON). These run inside their hosting process: process-level pause/cancel must not freeze or kill the entire Codex/Claude host. Use the host's supplied `AbortSignal` and control integration, or start through `autocode run` for supervisor-backed CLI controls. CLI control attempts against an embedded call fail explicitly. Resume is refused while another live owner is running. Completed runs can move between embedded and CLI execution without stale controller state hiding them.
 
 ## Trusted host context
 
@@ -100,7 +108,7 @@ Use `autocode skip <id> --agent 1` to return `null` from one active agent call, 
 {"id":"session-id","revision":"1","providers":{"codex":{"model":"your-model","effort":"high"}}}
 ```
 
-The embedded `runWorkflow({hostContext})` interface additionally accepts callbacks. Context fields currently implemented are:
+The embedded `runWorkflow({hostContext})` interface additionally accepts callbacks. With nonempty provider configuration, declare `defaultProvider` or a per-call `provider`; omission is rejected so provider policy cannot be silently bypassed. Context fields currently implemented are:
 
 - `id` and `revision`: required nonempty strings, included in replay identity. Increment the revision when instructions, agent definitions, MCP configuration or policy changes.
 - `instructions`: trusted project instructions delivered above the task text.
@@ -108,7 +116,7 @@ The embedded `runWorkflow({hostContext})` interface additionally accepts callbac
 - `agents`: registry keyed by `agentType`, with `prompt` and optional `tools`/`disallowedTools`. Codex refuses tool-restricted entries rather than dropping their restrictions.
 - `onSpawn({prompt, options, workflow, signal})`: optional async hook; return `{deny: "reason"}` to refuse, or `{prompt, model}` to rewrite those fields. Rewrites participate in replay identity; a forced host model still wins. `workflow` is an immutable `{runId, agentIndex}`. Set `shareWorkflowPrompt: false` to withhold task text from this hook and disable its prompt rewrites.
 - `canUseTool`: Claude SDK permission callback; JSON files cannot supply functions. Both Codex transports refuse contexts that require this unsupported permission callback; ordinary calls without it still run.
-- `budget`: `{total, spent(), charge(delta)}` shared by embedded workflows. These callbacks are synchronous and must share one authoritative ledger; a host can charge main-agent usage into the same ledger. Standalone budgets cover runner-owned reported output usage.
+- `budget`: `{total, spent(), charge(delta)}` shared by embedded workflows. `spent()` must return a nonnegative safe integer and `charge(delta)` must complete synchronously. These callbacks must share one authoritative ledger; a host can charge main-agent usage into the same ledger. Standalone budgets cover runner-owned reported output usage.
 - `waitForQuota({provider, rateLimit, signal})`: optional host coordinator; return `true` after an authorized quota wait to retry, or decline to return a terminal `null` result. Respect the supplied abort signal.
 
 The host supplies this context outside workflow source. Standalone execution does not automatically inherit the parent transcript, live MCP connections, permission decisions or turn-wide token usage.
@@ -157,6 +165,8 @@ New journals use version 2. Older journals remain intact but cannot be replayed 
 
 `budget.spent()` retains historical reported output usage on resume. Returned `outputTokens` remains the usage of the current attempt, so cached answers do not incur a second charge. In-flight calls can exceed the admission threshold. Failed calls are charged when the provider reports usage; unreported usage remains unknown.
 
+For context-window behavior, native compaction, fresh retries and what a resume preserves, see [Context and compaction](references/authoring.md#context-and-compaction). A workflow journal is not a provider-conversation snapshot.
+
 ## Saved workflow discovery
 
 Run `autocode workflows --json` to list saved project workflows and their `whenToUse` metadata without executing their bodies. `--cwd <project>` selects a project. Invoke a discovered child with `workflow(entry.reference, args)`; the reference may differ from its display name.
@@ -175,7 +185,7 @@ Export with `autocode export --run-dir <run> --to <new-snapshot-directory>`. Imp
 
 Snapshots contain `run.json` and `journal.jsonl`, not controller tokens, project files or retained worktree contents. Preserve those files separately when moving between machines.
 
-Embedded hosts can supply `onComplete(output)` and `onFailure({runId,error})`. Notification failures preserve the completed result or original workflow error and remain in the journal/status. A successful response with missing provider usage sets `usageIncomplete: true`; numeric token totals are lower bounds when this flag is present.
+Completion must return through an awaited caller or a native host-owned background task. Custom notification integrations require BOTH `hostContext.onComplete(output)` and `hostContext.onFailure({runId,error})`; a partial or non-function pair is rejected before any files or agents start. Both must deliver to the originating host, and the host must monitor process death independently. Terminal state is durable before either callback runs. A callback/file alone cannot prove that the main agent was notified. Notification failures preserve the completed result or original workflow error and remain in the journal/status. A successful response with missing provider usage sets `usageIncomplete: true`; numeric token totals are lower bounds when this flag is present.
 
 Calls sharing an instruction prefix wait for the first genuine model response, up to five seconds; a warm prefix expires after 270 seconds. Prefix coordination is shared by workflows using the same trusted host context object. Provider initialization alone does not release waiting calls.
 

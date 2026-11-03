@@ -1,0 +1,58 @@
+{
+  "project": "/home/john/rev/package/autocode-public/.scratch/autocode-evals/run-PcEsn1",
+  "scope": "current-checkout authoring smoke with separate CLI execution",
+  "checks": {
+    "currentSkillRead": true,
+    "requiredModelSelection": true,
+    "skillAuthoredWorkflow": true,
+    "sdkAgentsCompleted": true,
+    "bugVerified": true,
+    "sourceUnchanged": true
+  },
+  "models": {
+    "requestedParent": "gpt-6-luna",
+    "forcedDelegate": "gpt-6-luna",
+    "forcedDelegateEffort": "medium",
+    "journalConfiguredModels": [
+      "gpt-6-luna"
+    ],
+    "parentApiReportedModel": null,
+    "delegateApiReportedModels": null,
+    "verification": "Selection is explicit; journal model fields record configured choices, not independently API-reported models."
+  },
+  "resultCount": 3,
+  "runId": "wf_6be57675-1d7b-4d9b-b73c-ae350b2b192e",
+  "passed": true,
+  "checkoutSkillAtReview": {
+    "path": "/home/john/rev/package/autocode-public/SKILL.md",
+    "sha256": "f1142858a491d486ccfe296900342af3ee70e9c43f9bda8cd6fe837b1017ee5c",
+    "timing": "hash measured after the successful source-read run; observed SDK command read the same unchanged checkout path"
+  },
+  "earlierRuns": [
+    {
+      "project": "/home/john/rev/package/autocode-public/.scratch/autocode-evals/run-zUHD74",
+      "scope": "authoring smoke with separate CLI execution",
+      "checks": {
+        "requiredModelSelection": true,
+        "skillAuthoredWorkflow": true,
+        "sdkAgentsCompleted": true,
+        "bugVerified": true,
+        "sourceUnchanged": true
+      },
+      "models": {
+        "requestedParent": "gpt-6-luna",
+        "forcedDelegate": "gpt-6-luna",
+        "forcedDelegateEffort": "medium",
+        "journalConfiguredModels": [
+          "gpt-6-luna"
+        ],
+        "parentApiReportedModel": null,
+        "delegateApiReportedModels": null,
+        "verification": "Selection is explicit; journal model fields record configured choices, not independently API-reported models."
+      },
+      "resultCount": 3,
+      "runId": "wf_51feec2a-7fbd-47c3-9330-7ad62fed5bb3",
+      "passed": true
+    }
+  ]
+}

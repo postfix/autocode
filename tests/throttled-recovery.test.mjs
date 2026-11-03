@@ -7,19 +7,25 @@ import {setImmediate as immediate} from 'node:timers/promises';
 import {runWorkflow} from '../scripts/runtime.mjs';
 test('a slow low-token response without a stop reason waits 45 seconds and retries once',async t=>{
  const runDir=await mkdtemp(join(tmpdir(),'throttle-recovery-'));let calls=0,settled=false;
+ const controller=new AbortController();let pending;
  t.mock.timers.enable({apis:['setTimeout']});
  try{
-  const pending=runWorkflow({runDir,script:'export const meta={name:"throttle",description:"throttle"};return agent("request");',agent:async()=>({result:++calls===1?'degraded':'recovered',outputTokens:2,durationMs:100000})});
+  pending=runWorkflow({runDir,signal:controller.signal,script:'export const meta={name:"throttle",description:"throttle"};return agent("request");',agent:async()=>({result:++calls===1?'degraded':'recovered',outputTokens:2,durationMs:100000})});
   pending.then(()=>settled=true,()=>settled=true);
-  for(let i=0;i<1000&&!settled&&calls===0;i++)await immediate();
-  for(let i=0;i<1000;i++){if((await readFile(join(runDir,'journal.jsonl'),'utf8')).includes('waiting 45 seconds'))break;await immediate();}
+  const deadline=performance.now()+5000;let waiting=false;
+  while(!settled&&performance.now()<deadline){
+   const journal=await readFile(join(runDir,'journal.jsonl'),'utf8').catch(error=>{if(error.code==='ENOENT')return '';throw error;});
+   if(journal.includes('waiting 45 seconds')){waiting=true;break;}
+   await immediate();
+  }
+  assert.equal(waiting,true,'recovery must reach backoff before advancing its clock');
   await immediate();
   assert.equal(settled,false,'degraded response must wait before returning');
   t.mock.timers.tick(44999);await immediate();assert.equal(calls,1);
   t.mock.timers.tick(1);
   const result=await pending;
   assert.equal(result.result,'recovered');assert.equal(calls,2);assert.equal(result.outputTokens,4);
- }finally{t.mock.timers.reset();await rm(runDir,{recursive:true,force:true});}
+ }finally{controller.abort(Error('test cleanup'));await pending?.catch(()=>{});t.mock.timers.reset();await rm(runDir,{recursive:true,force:true});}
 });
 
 test('terminal and unmeasured responses do not enter throttle backoff',async()=>{

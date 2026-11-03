@@ -9,7 +9,7 @@ import { promisify } from 'node:util';
 const executeFile = promisify(execFile);
 import { Script, createContext } from 'node:vm';
 import { parseExpressionAt } from 'acorn';
-import { safeText } from './run-stats.mjs';
+import { safeText, registerEmbeddedRun, readRunStatus } from './run-stats.mjs';
 
 const hostPrefixGates = new WeakMap();
 function prefixGate() {
@@ -103,10 +103,14 @@ export async function runWorkflow({ script, args, runDir, agent, budget = null, 
   concurrency = Math.min(16, Math.max(2, availableParallelism() - 2)), resumeFromRunId,
   resolveWorkflow, onProgress, defaultProvider, initialRunId, hostContext, cwd = process.cwd(), subscribeControls, executionContext }) {
   if (hostContext && (typeof hostContext.id !== 'string' || !hostContext.id || typeof hostContext.revision !== 'string' || !hostContext.revision)) throw new TypeError('host context requires id and revision');
+  if (hostContext && (hostContext.onComplete !== undefined || hostContext.onFailure !== undefined) &&
+      (typeof hostContext.onComplete !== 'function' || typeof hostContext.onFailure !== 'function'))
+    throw new TypeError('host completion notifications require both onComplete and onFailure functions');
   if (hostContext && !hostPrefixGates.has(hostContext)) hostPrefixGates.set(hostContext,prefixGate());
   const enterPrefix = hostContext ? hostPrefixGates.get(hostContext) : prefixGate();
   const sharedBudget = hostContext?.budget;
   if (sharedBudget && (typeof sharedBudget.spent !== 'function' || typeof sharedBudget.charge !== 'function')) throw new TypeError('host budget needs spent() and charge()');
+  if (sharedBudget && Object.prototype.toString.call(sharedBudget.charge) === '[object AsyncFunction]') throw new TypeError('host budget charge() must be synchronous');
   if (sharedBudget) budget = sharedBudget.total;
   if(initialRunId!==undefined&&!/^wf_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(initialRunId))throw new TypeError('invalid initial workflow ID');
   if (typeof script !== 'string') throw new TypeError('script must be a string');
@@ -127,6 +131,10 @@ export async function runWorkflow({ script, args, runDir, agent, budget = null, 
   const worktrees = [];
   let previousOutputTokens = 0, usageIncomplete = false;
   if (resumeFromRunId) {
+    const priorStatus = await readRunStatus(runDir);
+    if (['starting','running','paused','cancelling'].includes(priorStatus.state) &&
+        !(priorStatus.controllable === true && priorStatus.pid === process.pid))
+      throw new Error('Workflow is still running; resume only after it ends');
     const saved = JSON.parse(await readFile(runFile, 'utf8'));
     if (saved.journalVersion !== 2) throw new Error('Legacy replay journal is incompatible; preserve this directory and start a fresh run');
     if (saved.runId !== resumeFromRunId) throw new Error('resume run ID does not match this directory');
@@ -183,7 +191,18 @@ export async function runWorkflow({ script, args, runDir, agent, budget = null, 
   const root = { previousKey: seed, replaying: true };
   let agentCount = 0;
   let outputTokens = previousOutputTokens;
-  const spent = () => sharedBudget ? sharedBudget.spent() : outputTokens;
+  let ledgerError;
+  const spent = () => {
+    if (ledgerError) throw ledgerError;
+    if (!sharedBudget) return outputTokens;
+    const value = sharedBudget.spent();
+    if (!Number.isSafeInteger(value) || value < 0) {
+      if (value && typeof value.then === 'function') Promise.resolve(value).catch(() => {});
+      ledgerError = new TypeError('host budget spent() must synchronously return a non-negative safe integer');
+      throw ledgerError;
+    }
+    return value;
+  };
   let currentPhase = null;
   const logs = [];
   let active = 0;
@@ -227,7 +246,8 @@ export async function runWorkflow({ script, args, runDir, agent, budget = null, 
     let priorOutput = 0, throttleRetried = false;
     const priorUsage = {};
     for (let attempt = 0; attempt <= 5; attempt++) {
-      if (budget !== null && spent() >= budget) throw new Error('Autocode token budget exceeded');
+      const currentSpent = spent();
+      if (budget !== null && currentSpent >= budget) throw new Error('Autocode token budget exceeded');
       const controller = new AbortController();
       agentControls.set(context.agentIndex, command => {
         const reason = new Error(`user-${command}`); reason.code = `user-${command}`; controller.abort(reason);
@@ -333,6 +353,9 @@ export async function runWorkflow({ script, args, runDir, agent, budget = null, 
     for (const name of Object.keys(opts))
       if (!['provider','model','effort','schema','label','phase','agentType','isolation','disallowedTools','bashCommandClamp','stallMs','sandbox'].includes(name)) throw new TypeError(`unsupported agent option: ${name}`);
     const provider = opts.provider ?? defaultProvider;
+    // Provider context also controls adapter capabilities and execution identity, not only models.
+    if (provider == null && Object.values(hostContext?.providers ?? {}).some(policy => policy && typeof policy === 'object' && Object.keys(policy).length))
+      throw new TypeError('Declare opts.provider or defaultProvider when using provider-specific host context');
     const inherited = hostContext?.providers?.[provider];
     const custom = Object.hasOwn(hostContext?.agents ?? {}, opts.agentType) ? hostContext.agents[opts.agentType] : undefined;
     opts = structuredClone({ ...opts, model: inherited?.forcedModel ?? opts.model ?? (custom?.model === 'inherit' ? undefined : custom?.model) ?? inherited?.model, effort: inherited?.forcedEffort ?? opts.effort ?? custom?.effort ?? inherited?.effort });
@@ -363,15 +386,21 @@ export async function runWorkflow({ script, args, runDir, agent, budget = null, 
     await record({type:'queued',key,...details});
     return inSlot(async () => {
       signal?.throwIfAborted();
-      if (budget !== null && spent() >= budget) throw Error('Autocode token budget exceeded');
-      const progress = { label: opts.label ?? prompt, phase: opts.phase ?? currentPhase };
+      const currentSpent = spent();
+      if (budget !== null && currentSpent >= budget) throw Error('Autocode token budget exceeded');
+      const progress = { label: details.label, phase: details.phase };
       await record({ type: 'started', key, ...details });
       onProgress?.({ type: 'agent-started', ...progress });
       const usage={};
       let reportedOutput = 0;
       const reportOutput = count => {
         if (Number.isSafeInteger(count) && count > reportedOutput) {
-          sharedBudget?.charge(count - reportedOutput);
+          const charged = sharedBudget?.charge(count - reportedOutput);
+          if (charged && typeof charged.then === 'function') {
+            Promise.resolve(charged).catch(() => {});
+            ledgerError = new TypeError('host budget charge() must be synchronous');
+            throw ledgerError;
+          }
           outputTokens += count - reportedOutput;
           reportedOutput = count;
         }
@@ -406,7 +435,12 @@ export async function runWorkflow({ script, args, runDir, agent, budget = null, 
       } catch (error) {
         usageIncomplete = true;
         preserveWorktree = error?.code === 'cancellation-unconfirmed';
-        await record({ type: error?.code === 'user-skip' ? 'skipped' : 'failed', key, outputTokens: reportedOutput, ...usage, message: safeText(error?.message ?? error) });
+        const typedFailure = {};
+        if (['terminal-api','transient-api','api-error','rate-limit','lost-reply'].includes(error?.kind)) typedFailure.kind = error.kind;
+        const nativeCode = typeof error?.codexErrorInfo === 'string' ? error.codexErrorInfo :
+          error?.codexErrorInfo && typeof error.codexErrorInfo === 'object' && Object.keys(error.codexErrorInfo).length === 1 ? Object.keys(error.codexErrorInfo)[0] : undefined;
+        if (['contextWindowExceeded','sessionBudgetExceeded','usageLimitExceeded','rateLimitExceeded','flexUnavailable','serverOverloaded','cyberPolicy','misalignmentPolicyViolation','tooManyDenials','internalServerError','unauthorized','badRequest','threadRollbackFailed','sandboxError','other','httpConnectionFailed','responseStreamConnectionFailed','responseStreamDisconnected','responseTooManyFailedAttempts','activeTurnNotSteerable'].includes(nativeCode)) typedFailure.codexErrorInfo = nativeCode;
+        await record({ type: error?.code === 'user-skip' ? 'skipped' : 'failed', key, outputTokens: reportedOutput, ...usage, ...typedFailure, message: safeText(error?.message ?? error) });
         onProgress?.({ type: error?.code === 'user-skip' ? 'agent-skipped' : 'agent-failed', ...progress });
         if (error?.code === 'user-skip') return null;
         if (['terminal-api','transient-api','api-error','rate-limit'].includes(error?.kind)) { failures.push(safeText(error.message)); return null; }
@@ -544,16 +578,18 @@ export async function runWorkflow({ script, args, runDir, agent, budget = null, 
     return contexts.run(context, () => code.runInContext(context, { timeout: 30_000 }));
   };
   try {
+    await registerEmbeddedRun({runDir,runId,cwd});
     signal?.throwIfAborted();
     const result = await execute(script, args, 0);
+    if (ledgerError) throw ledgerError;
     signal?.throwIfAborted();
     const output = { result: structuredClone(result), agentCount, outputTokens: outputTokens - previousOutputTokens, failures, logs, runId, worktrees, ...(usageIncomplete ? {usageIncomplete:true} : {}) };
+    await record({type:'run-finished',failures:failures.map(x=>safeText(x))});
     try { await hostContext?.onComplete?.(structuredClone(output)); }
     catch(error) {
       const message = `Completion notification failed: ${safeText(error?.message ?? error)}`;
       failures.push(message); await record({type:'notification-failed',message});
     }
-    await record({type:'run-finished',failures:failures.map(x=>safeText(x))});
     return output;
   } catch(error) {
     await record({type:'run-failed',message:safeText(error?.message??error)});

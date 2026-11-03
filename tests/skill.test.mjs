@@ -27,13 +27,14 @@ test('bundled review template runs both review and verification stages', async (
   try {
     const script = await readFile(join(root, 'assets/templates/review-and-verify.js'), 'utf8');
     const prompts = [];
+    const finding = {file:'src/a.js',line:1,description:'Possible bug'};
     const output = await runWorkflow({ script, args: { topics: ['src/a.js'] }, runDir,
       agent: async (prompt, opts) => {
         prompts.push(prompt);
-        return { result: prompt.startsWith('Review') ? { findings: ['possible bug'] } :
+        return { result: prompt.startsWith('Review') ? { findings: [finding] } :
           { real: true, reason: 'reproduced' }, outputTokens: 1 };
       } });
-    assert.deepEqual(output.result, [{ finding: 'possible bug', verdict: { real: true, reason: 'reproduced' } }]);
+    assert.deepEqual(output.result, [{ finding, verdict: { real: true, reason: 'reproduced' } }]);
     assert.equal(prompts.length, 2);
     assert.deepEqual(output.failures, []);
   } finally { await rm(runDir, { recursive: true, force: true }); }
@@ -45,7 +46,7 @@ test('review template drops findings the verifier refutes', async () => {
     const script = await readFile(join(root, 'assets/templates/review-and-verify.js'), 'utf8');
     const output = await runWorkflow({ script, args: { topics: ['src/a.js'] }, runDir,
       agent: async prompt => ({ result: prompt.startsWith('Review') ?
-        { findings: ['false alarm'] } : { real: false, reason: 'no repro' }, outputTokens: 1 }) });
+        { findings: [{file:'src/a.js',line:1,description:'False alarm'}] } : { real: false, reason: 'no repro' }, outputTokens: 1 }) });
     assert.deepEqual(output.result, []);
   } finally { await rm(runDir, { recursive: true, force: true }); }
 });
@@ -55,14 +56,16 @@ test('exhaustive review deduplicates, votes, and stops after dry rounds', async 
   try {
     const script = await readFile(join(root, 'assets/templates/exhaustive-review.js'), 'utf8');
     const seen = [];
+    const finding = {id:'quantity-minimum',file:'src/a.js',line:1,description:'One issue'};
     const output = await runWorkflow({ script, args: { topics: ['src/a.js'], maxRounds: 4 }, runDir,
-      agent: async prompt => {
+      agent: async (prompt, options) => {
         seen.push(prompt);
-        if (prompt.startsWith('Round')) return { result: { findings: ['one issue'] }, outputTokens: 1 };
-        if (prompt.startsWith('Try')) return { result: { real: true, reason: 'reproduced' }, outputTokens: 1 };
-        return { result: 'No gaps found', outputTokens: 1 };
+        if (options.phase === 'Find') return { result: { findings: [finding] }, outputTokens: 1 };
+        if (options.phase === 'Verify') return { result: { real: true, reason: 'reproduced' }, outputTokens: 1 };
+        if (options.phase === 'Completeness') return { result: {summary:'No gaps found',gaps:[]}, outputTokens: 1 };
+        throw Error(`Unexpected fixture phase: ${options.phase}`);
       } });
-    assert.deepEqual(output.result.confirmed, ['one issue']);
+    assert.deepEqual(output.result.confirmed, [finding]);
     assert.equal(output.result.rounds, 3);
     assert.equal(output.result.stoppedAfterDryRounds, true);
     assert.equal(seen.filter(prompt => prompt.startsWith('Try')).length, 3);
@@ -74,11 +77,14 @@ test('exhaustive review does not confirm a finding without two positive votes', 
   const runDir = await mkdtemp(join(tmpdir(), 'autocode-template-'));
   try {
     const script = await readFile(join(root, 'assets/templates/exhaustive-review.js'), 'utf8');
+    const finding = {id:'false-alarm',file:'src/a.js',line:1,description:'False alarm'};
     const output = await runWorkflow({ script, args: { topics: ['src/a.js'], maxRounds: 1 }, runDir,
-      agent: async prompt => ({ result: prompt.startsWith('Round') ? { findings: ['false alarm'] } :
-        prompt.includes('correctness') ? { real: true, reason: 'possible' } :
-          prompt.startsWith('Try') ? { real: false, reason: 'refuted' } : 'Check incomplete',
-      outputTokens: 1 }) });
+      agent: async (prompt, options) => {
+        if (options.phase === 'Find') return {result:{findings:[finding]},outputTokens:1};
+        if (options.phase === 'Verify') return {result:prompt.includes('correctness')?{real:true,reason:'Boundary reproduced'}:{real:false,reason:'Counterexample refutes this claim'},outputTokens:1};
+        if (options.phase === 'Completeness') return {result:{summary:'Check incomplete',gaps:['Only one discovery round completed']},outputTokens:1};
+        throw Error(`Unexpected fixture phase: ${options.phase}`);
+      } });
     assert.deepEqual(output.result.confirmed, []);
     assert.equal(output.result.stoppedAfterDryRounds, false);
     assert.match(output.logs.at(-1).message, /Stopped at maxRounds/);

@@ -54,7 +54,16 @@
     "evals/full-task-claude.mjs",
     "evals/full-task-source-mcp.mjs",
     "evals/full-task-results-2026-11-02.json",
-    "evals/RESULTS.md"
+    "evals/RESULTS.md",
+    "docs/CONTEXT-FORKING-RESEARCH.md",
+    "evals/embedded-discovery-live.mjs",
+    "evals/embedded-discovery-results-2026-11-03.json",
+    "evals/review-context-live.mjs",
+    "evals/review-context-fixture.mjs",
+    "evals/review-context-results-2026-11-03.json",
+    "evals/parent-completion-results-2026-11-03.json",
+    "evals/authoring-smoke-results-2026-11-03.json",
+    "evals/COVERAGE.md"
   ],
   "engines": {
     "node": ">=20"

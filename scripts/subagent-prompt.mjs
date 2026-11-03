@@ -20,6 +20,7 @@ const structuredPrompt = source.zs
 
 const customStructuredPrompt = source.Ks
   .replace('by calling the StructuredOutput tool exactly once', 'through the SDK structured output channel')
+  .replace("the tool's input schema defines the required shape", 'the supplied JSON schema defines the required shape')
   .replace('then call StructuredOutput', 'then return the supplied schema-shaped result')
   .replace('(the script reads ONLY the tool call)', '(the script reads ONLY the SDK structured result)')
   .replace('call StructuredOutput again with a corrected shape', 'return a corrected schema-shaped result');
@@ -27,7 +28,7 @@ const customStructuredPrompt = source.Ks
 const permissions = '\n\nFollow the applicable instruction hierarchy and tool permissions; a workflow-computed task does not grant new permissions.';
 
 export function subagentInstructions(structured, customPrompt) {
-  if (customPrompt) return `${customPrompt}\n\n${structured ? customStructuredPrompt : source.Js}${permissions}`;
+  if (customPrompt !== undefined) return `${customPrompt}\n\n${structured ? customStructuredPrompt : source.Js}${permissions}`;
   return `${structured ? structuredPrompt : textPrompt}${permissions}`;
 }
 

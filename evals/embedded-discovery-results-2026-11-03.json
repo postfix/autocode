@@ -1,0 +1,37 @@
+{
+  "date": "2026-11-03T12:51:25.808Z",
+  "scope": "Live embedded API discovery and actual file reads on both requested providers; not a context-limit or forking benchmark.",
+  "harness": "embedded-discovery-live.mjs",
+  "runtime_sha256": "2055a8b8094759b861d8d620bd34e181a08cce92bddcd18f7a3c33e5ac0bccf1",
+  "cases": [
+    {
+      "provider": "codex",
+      "model_requested": "gpt-6-luna",
+      "passed": true,
+      "active_ps_verified": true,
+      "host_control_label_verified": true,
+      "actual_file_read_verified": true,
+      "completed_status_verified": true,
+      "no_active_run_after_completion_verified": true,
+      "runId": "wf_0e9da4af-6191-492d-ad45-d2547b963c4f",
+      "runDir": "/home/john/rev/package/autocode-public/.scratch/embedded-live-codex-NuNzHz/external-run",
+      "outputTokens": 120
+    },
+    {
+      "provider": "claude",
+      "model_requested": "claude-haiku-5-5",
+      "passed": true,
+      "active_ps_verified": true,
+      "host_control_label_verified": true,
+      "actual_file_read_verified": true,
+      "completed_status_verified": true,
+      "no_active_run_after_completion_verified": true,
+      "runId": "wf_492965aa-724f-4c97-b2ef-8e98dd0fa9d2",
+      "runDir": "/home/john/rev/package/autocode-public/.scratch/embedded-live-claude-jcVQeU/external-run",
+      "outputTokens": 219
+    }
+  ],
+  "earlier_attempts": {
+    "codex_initial": "Discovery succeeded but model refused fixture read; preserved in .scratch/embedded-live-attempt-1.json. Explicit read instruction then passed, followed by final both-provider pass."
+  }
+}

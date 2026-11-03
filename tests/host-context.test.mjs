@@ -80,7 +80,7 @@ test('a host can supply an authoritative named workflow registry',async()=>{
 test('a trusted host receives the completed workflow result',async()=>{
  const runDir=await mkdtemp(join(tmpdir(),'host-complete-'));let notification;
  try {
-  await runWorkflow({runDir,hostContext:{id:'session',revision:'1',onComplete:async result=>{notification=result.result;}},script:'export const meta={name:"complete",description:"complete"};return 42;',agent:async()=>{}});
+  await runWorkflow({runDir,hostContext:{id:'session',revision:'1',onComplete:async result=>{notification=result.result;},onFailure:async()=>{}},script:'export const meta={name:"complete",description:"complete"};return 42;',agent:async()=>{}});
   assert.equal(notification,42);
  }finally{await rm(runDir,{recursive:true,force:true});}
 });
@@ -88,7 +88,7 @@ test('a trusted host receives the completed workflow result',async()=>{
 test('a failed completion notification does not discard a completed result',async()=>{
  const runDir=await mkdtemp(join(tmpdir(),'notification-failure-'));
  try {
-  const output=await runWorkflow({runDir,hostContext:{id:'session',revision:'1',onComplete:async()=>{throw Error('notification unavailable');}},script:'export const meta={name:"complete",description:"complete"};return 42;',agent:async()=>{}});
+  const output=await runWorkflow({runDir,hostContext:{id:'session',revision:'1',onComplete:async()=>{throw Error('notification unavailable');},onFailure:async()=>{}},script:'export const meta={name:"complete",description:"complete"};return 42;',agent:async()=>{}});
   assert.equal(output.result,42);assert.match(output.failures[0],/notification unavailable/);
  }finally{await rm(runDir,{recursive:true,force:true});}
 });
@@ -96,7 +96,7 @@ test('a failed completion notification does not discard a completed result',asyn
 test('a trusted host receives the original workflow failure',async()=>{
  const runDir=await mkdtemp(join(tmpdir(),'host-failure-'));let notification;
  try {
-  await assert.rejects(runWorkflow({runDir,hostContext:{id:'session',revision:'1',onFailure:async value=>{notification=value.error;}},script:'export const meta={name:"fail",description:"fail"};throw Error("workflow broke");',agent:async()=>{}}),/workflow broke/);
+  await assert.rejects(runWorkflow({runDir,hostContext:{id:'session',revision:'1',onComplete:async()=>{},onFailure:async value=>{notification=value.error;}},script:'export const meta={name:"fail",description:"fail"};throw Error("workflow broke");',agent:async()=>{}}),/workflow broke/);
   assert.equal(notification,'workflow broke');
  }finally{await rm(runDir,{recursive:true,force:true});}
 });
@@ -105,7 +105,7 @@ test('completion notification failures remain visible in CLI status',async()=>{
  const {runAutocode}=await import('../scripts/autocode.mjs');
  const runDir=await mkdtemp(join(tmpdir(),'notification-status-'));
  try {
-  await runWorkflow({runDir,hostContext:{id:'session',revision:'1',onComplete:async()=>{throw Error('delivery failed');}},script:'export const meta={name:"complete",description:"complete"};return 42;',agent:async()=>{}});
+  await runWorkflow({runDir,hostContext:{id:'session',revision:'1',onComplete:async()=>{throw Error('delivery failed');},onFailure:async()=>{}},script:'export const meta={name:"complete",description:"complete"};return 42;',agent:async()=>{}});
   const status=await runAutocode(['status','--run-dir',runDir,'--json']);
   assert.equal(status.errorCount,1);assert.match(status.notificationErrors[0],/delivery failed/);
  }finally{await rm(runDir,{recursive:true,force:true});}
