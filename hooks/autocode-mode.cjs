@@ -5,11 +5,11 @@ const { createHash } = require('node:crypto');
 
 const recoveredReminders = require('../references/source-prompts/activation-reminders.json');
 const reminders = Object.fromEntries(Object.entries(recoveredReminders).map(([name, text]) => [name,
-  text.replace(/^Ultracode/, 'Autocode').replaceAll('Workflow tool', 'Autocode skill')
+  text.replaceAll('Workflow tool', 'Autocode skill')
     .replaceAll('workflow authoring reference', path.join(__dirname, '../references/source-prompts/authoring.md')) +
     (name === 'full' ? '\nRespect explicit user budgets and tool permissions. Use independent verification and the Autocode quality patterns.' : '')]));
 
-function hasUltracodeKeyword(prompt) {
+function hasAutocodeKeyword(prompt) {
   if (typeof prompt !== 'string' || prompt.trimStart().startsWith('/')) return false;
   const closing = { '`': '`', '"': '"', '<': '>', '{': '}', '[': ']', '(': ')', "'": "'" };
   const word = char => !!char && /[\p{L}\p{N}_]/u.test(char);
@@ -30,7 +30,7 @@ function hasUltracodeKeyword(prompt) {
       start = i;
     }
   }
-  for (const match of prompt.matchAll(/\bultracode\b/gi)) {
+  for (const match of prompt.matchAll(/\bautocode\b/gi)) {
     const start = match.index, end = start + match[0].length;
     if (spans.some(([left, right]) => start >= left && start < right)) continue;
     if (/[\/\\-]/.test(prompt[start - 1] ?? '') || /[\/\\?\-]/.test(prompt[end] ?? '')) continue;
@@ -52,10 +52,10 @@ function transition(event, input, state = { on: false, turns: 0 }) {
 
   const prompt = String(input.prompt ?? '').trim();
   let next = { ...state }, message = '';
-  if (/^(?:[/@$]?)(?:auto|ultra)code\s+on\b/i.test(prompt)) {
+  if (/^(?:[/@$]?)autocode\s+on\b/i.test(prompt)) {
     next = { on: true, turns: 0 };
     message = reminders.full;
-  } else if (/^(?:(?:[/@$]?)(?:auto|ultra)code\s+off\b|stop\s+(?:auto|ultra)code\b)/i.test(prompt)) {
+  } else if (/^(?:(?:[/@$]?)autocode\s+off\b|stop\s+autocode\b)/i.test(prompt)) {
     next = { on: false, turns: 0 };
     message = state.on ? reminders.exit : '';
   } else {
@@ -66,7 +66,7 @@ function transition(event, input, state = { on: false, turns: 0 }) {
         next.turns = 0;
       }
     }
-    if (hasUltracodeKeyword(prompt)) message = [reminders.keyword, message].filter(Boolean).join('\n\n');
+    if (hasAutocodeKeyword(prompt)) message = [reminders.keyword, message].filter(Boolean).join('\n\n');
   }
   if (input.prompt_id) {
     next.lastPromptId = input.prompt_id;
@@ -124,5 +124,5 @@ function run(event) {
   process.stdin.on('error', finish);
 }
 
-module.exports = { hasUltracodeKeyword, transition, formatOutput, run };
+module.exports = { hasAutocodeKeyword, transition, formatOutput, run };
 if (require.main === module) run(process.argv[2]);

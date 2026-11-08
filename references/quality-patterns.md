@@ -1,6 +1,6 @@
 # Workflow design and verification patterns
 
-This is the working Autocode adaptation of the [recovered Ultracode authoring prompt](source-prompts/authoring.md). Read that full prompt before composing a workflow; use this guide and [authoring.md](authoring.md) for runnable examples and the packaged runner's API and limits.
+This is the working Autocode adaptation of the [recovered Autocode authoring prompt](source-prompts/authoring.md). Read that full prompt before composing a workflow; use this guide and [authoring.md](authoring.md) for runnable examples and the packaged runner's API and limits.
 
 ## Keep stage context focused
 
@@ -153,7 +153,7 @@ An `agent()` result is data returned to its workflow script. Ask for the exact o
 | Workflow tool descriptions | `SKILL.md` supplies the opt-in boundary and workflow invocation. |
 | Authoring preamble | `SKILL.md` requires reading both references before writing a workflow. |
 | Text and structured subagent prompts | Both SDK adapters apply the return contract above. |
-| Keyword reminder | Explicit `$autocode` or workflow requests activate the skill. The optional plugin hook also scans qualifying human prompts for `ultracode` and injects a one-turn reminder. |
+| Keyword reminder | Explicit `$autocode` or workflow requests activate the skill. The optional plugin hook also scans qualifying human prompts for `autocode` and injects a one-turn reminder. |
 | Full enter, sparse continued, and exit reminders | The optional Codex/Claude plugin hook persists `autocode on` mode per session, emits a full entry reminder, a sparse reminder after ten human turns or on resume, and an exit reminder for `autocode off`. Skill-only installs have no session hook. |
 | Shared subagent authority note (`jn`) | Workflow-computed tasks are followed within the usual instruction hierarchy and permissions. |
 | Default text prompt (`Hs`) and custom-agent text suffix (`Js`) | Both SDK adapters apply the preserved return contracts; custom types resolve from the trusted host registry, subject to provider capability checks. |

@@ -50,6 +50,23 @@ test('run selects Claude as the default SDK provider', async () => {
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
+test('run selects OMP as a provider and routes calls to the omp adapter', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'autocode-cli-'));
+  const script = join(dir, 'workflow.js');
+  await writeFile(script, 'export const meta = {name:"omp",description:"Select provider"};\nreturn await agent("check");');
+  try {
+    const output = await runAutocode(['run', script, '--provider', 'omp',
+      '--run-dir', join(dir, 'run'), '--cwd', dir], {
+      omp: async (prompt, opts) => {
+        assert.equal(prompt, 'check');
+        assert.equal(opts.sandbox, 'read-only');
+        return { result: 'OMP_OK', outputTokens: 5 };
+      },
+    });
+    assert.equal(output.result, 'OMP_OK');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
 test('one run can route calls to both SDKs with different models and effort', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'autocode-cli-'));
   const script = join(dir, 'workflow.js');

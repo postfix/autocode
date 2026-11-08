@@ -1,8 +1,8 @@
 Execute a workflow script that orchestrates multiple subagents deterministically. Workflows run in the background — this tool returns immediately with a task ID, and a <task-notification> arrives when the workflow completes. Use /workflows to watch live progress.
 
 ONLY call this tool when the user has explicitly opted into multi-agent orchestration. Workflows can spawn dozens of agents and consume a large amount of tokens; the user must request that scale, not have it inferred. Explicit opt-in means one of:
-- The user included the keyword "ultracode" in their prompt (a message from the system confirms it).
-- Ultracode is on for the session (a system-reminder confirms it) — see **Ultracode** in the workflow authoring reference.
+- The user included the keyword "autocode" in their prompt (a message from the system confirms it).
+- Autocode is on for the session (a system-reminder confirms it) — see **Autocode** in the workflow authoring reference.
 - The user directly asked you to run a workflow or use multi-agent orchestration in their own words ("use a workflow", "run a workflow", "fan out agents", "orchestrate this with subagents"). The ask must be in the user's words — a task that would merely benefit from a workflow does not count.
 - The user invoked a skill or slash command whose instructions tell you to call Workflow.
 - The user asked you to run a specific named or saved workflow.

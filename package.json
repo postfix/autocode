@@ -13,6 +13,8 @@
   },
   "files": [
     "SKILL.md",
+    "plugin.json",
+    "skills/autocode/SKILL.md",
     "LICENSE",
     "README.md",
     "INSTALL.md",
@@ -39,6 +41,8 @@
     "scripts/run-stats.mjs",
     "scripts/subagent-prompt.mjs",
     "scripts/schema.mjs",
+    "scripts/omp-adapter.mjs",
+    "scripts/install.mjs",
     "scripts/codex-app-server.mjs",
     "docs/PARITY-STATUS.json",
     "docs/AUTO-01-HANDOFF.md",

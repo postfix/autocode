@@ -1,6 +1,6 @@
 # Autocode
 
-Autocode is a skill for Codex and Claude that writes and runs JavaScript workflows to coordinate agents. A workflow can fan out tasks, run pipelines, call child workflows, report progress, enforce a soft output-token budget, and resume completed agent calls from its journal. The runner uses the native `@openai/codex-sdk` and `@anthropic-ai/claude-agent-sdk` packages.
+Autocode is a skill for Codex, Claude, and Oh My Pi (OMP) that writes and runs JavaScript workflows to coordinate agents. A workflow can fan out tasks, run pipelines, call child workflows, report progress, enforce a soft output-token budget, and resume completed agent calls from its journal. The runner uses the native `@openai/codex-sdk` and `@anthropic-ai/claude-agent-sdk` packages, and drives the `omp` binary over its stdio RPC protocol for the `omp` provider.
 
 The agent authoring a workflow can use a capable model and high effort. Each delegated `agent()` call can then choose a smaller model, lower effort, or a different provider.
 
@@ -14,7 +14,7 @@ $autocode Review the changes in this repository with parallel agents, independen
 
 In Claude, ask it to use the `autocode` skill with the same request. The skill writes a workflow for the task, runs it through the local SDK adapters, and reports the results and failures. Ask for a specific provider, model, or effort level when you want to control delegated calls; the authoring agent can use higher effort than the agents that execute the workflow.
 
-The [host plugin](INSTALL.md#install-the-skill-and-session-hooks) installs the skill plus a one-turn `ultracode` keyword trigger and `autocode on` / `autocode off` session reminders in Codex and Claude. The npm package installs the runner command and SDK dependencies; Codex requires hook trust for the plugin.
+The [host plugin](INSTALL.md#install-the-skill-and-session-hooks) installs the skill plus a one-turn `autocode` keyword trigger and `autocode on` / `autocode off` session reminders in Codex, Claude, and Oh My Pi. The npm package installs the runner command and SDK dependencies; Codex requires hook trust for the plugin. From a checkout, `node scripts/autocode.mjs install --target codex|claude|omp|all` installs the runner and the skill for the hosts you select (see [INSTALL.md](INSTALL.md#install-to-a-specific-host-codex-claude-or-oh-my-pi)).
 
 ## Run a workflow directly
 
@@ -26,7 +26,7 @@ node scripts/autocode.mjs run assets/templates/parallel-scout.js \
   --args '{"questions":["Find likely bugs in src/","Check the README examples"]}'
 ```
 
-The command prints progress to stderr and a JSON result to stdout. [USAGE.md](USAGE.md) explains skill use, the workflow API, mixed-provider calls, resume, limits, and permission modes. The [quality patterns](references/quality-patterns.md) preserve the recovered Ultracode workflow decisions and worked examples in Autocode's API. The [exhaustive review template](assets/templates/exhaustive-review.js) runs repeated discovery, skeptical verification, and a completeness check.
+The command prints progress to stderr and a JSON result to stdout. [USAGE.md](USAGE.md) explains skill use, the workflow API, mixed-provider calls, resume, limits, and permission modes. The [quality patterns](references/quality-patterns.md) preserve the recovered Autocode workflow decisions and worked examples in Autocode's API. The [exhaustive review template](assets/templates/exhaustive-review.js) runs repeated discovery, skeptical verification, and a completeness check.
 
 Inspect and control a CLI run from another terminal:
 
@@ -52,7 +52,7 @@ Run the Linux suite with `node --test tests/*.test.mjs` in an environment allowi
 
 ## Scope and provenance
 
-Autocode is an independent implementation of local workflow orchestration, released under [Apache-2.0](LICENSE). This 0.1.1 candidate contains its own runner, templates, and tests, plus [recovered Ultracode prompt assets](references/source-prompts/) for instruction parity. The original subagent text and structured prompts are loaded at runtime with substitutions for unavailable SDK tools. Extracted bundle modules are not included. The current npm `latest` release does not contain these candidate changes.
+Autocode is an independent implementation of local workflow orchestration, released under [Apache-2.0](LICENSE). This 0.1.1 candidate contains its own runner, templates, and tests, plus [recovered Autocode prompt assets](references/source-prompts/) for instruction parity. The original subagent text and structured prompts are loaded at runtime with substitutions for unavailable SDK tools. Extracted bundle modules are not included. The current npm `latest` release does not contain these candidate changes.
 
 Run only workflow scripts you trust. Node's VM provides workflow globals but is not a security boundary. The SDKs may start their own local runtimes internally; Autocode calls their programmatic APIs rather than constructing `codex exec` or `claude -p` commands.
 

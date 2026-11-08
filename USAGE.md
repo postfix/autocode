@@ -10,7 +10,7 @@ $autocode Investigate the failing tests in this project in parallel, verify the 
 
 In Claude, ask it to use the `autocode` skill with the same request. The skill authors the JavaScript workflow and runs it. You can ask for Codex, Claude, or both as delegated providers, and specify the model or effort for individual tasks. The authoring agent can use higher effort than the delegated agents. Review the reported `failures` alongside the result.
 
-With the [host plugin](INSTALL.md#install-the-skill-and-session-hooks), a human request using the unquoted word `ultracode` triggers Autocode for that turn. `autocode on` enables standing mode for substantive tasks; `autocode off` exits it. A skill-only checkout remains usable through explicit invocation without hooks.
+With the [host plugin](INSTALL.md#install-the-skill-and-session-hooks), a human request using the unquoted word `autocode` triggers Autocode for that turn. `autocode on` enables standing mode for substantive tasks; `autocode off` exits it. A skill-only checkout remains usable through explicit invocation without hooks.
 
 ## Write a workflow yourself
 
@@ -31,6 +31,8 @@ Save the file as `inspect.js`. The host agent can spend more effort designing th
 
 ```bash
 autocode run inspect.js --provider codex
+
+# or: --provider claude | --provider omp
 ```
 
 The `autocode` command is installed by `npm install -g autocode-skill`. From a source checkout, run `node scripts/autocode.mjs` with the same arguments while in that checkout.
@@ -71,7 +73,7 @@ Statistics retain labels, phases, timings, reported token counts, and bounded to
 
 | Operation | Behavior |
 | --- | --- |
-| `agent(prompt, opts?)` | Runs a Codex or Claude SDK agent. `opts` can set `provider`, `model`, `effort`, `schema`, `label`, and `phase`. A root-object JSON Schema requests structured output. |
+| `agent(prompt, opts?)` | Runs a Codex, Claude, or Oh My Pi (OMP) agent. `opts` can set `provider`, `model`, `effort`, `schema`, `label`, and `phase`. A root-object JSON Schema requests structured output. |
 | `parallel([() => task, ...])` | Runs branches concurrently and preserves input order. A failing branch yields `null` and appears in `failures`. |
 | `pipeline(items, ...stages)` | Advances each item independently through stages. A `null` or failed item skips later stages. |
 | `workflow(nameOrRef, childArgs?)` | Runs a saved `.codex/workflows/<name>.js` file or `{scriptPath: 'child.js'}`. Children share the queue, budget, and journal; nesting is limited to one level. |

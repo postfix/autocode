@@ -7,13 +7,13 @@ import { fileURLToPath } from 'node:url';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const require = createRequire(import.meta.url);
-const { hasUltracodeKeyword, transition, formatOutput } = require('../hooks/autocode-mode.cjs');
+const { hasAutocodeKeyword, transition, formatOutput } = require('../hooks/autocode-mode.cjs');
 
 test('keyword scanner matches human prose and skips commands, quotes, and paths', () => {
-  assert.equal(hasUltracodeKeyword('Use ULTRACODE to review this'), true);
-  for (const prompt of ['/ultracode on', 'Read "ultracode"', '`ultracode`',
-    'src/ultracode.js', 'ultracode?'])
-    assert.equal(hasUltracodeKeyword(prompt), false, prompt);
+  assert.equal(hasAutocodeKeyword('Use AUTOCODE to review this'), true);
+  for (const prompt of ['/autocode on', 'Read "autocode"', '`autocode`',
+    'src/autocode.js', 'autocode?'])
+    assert.equal(hasAutocodeKeyword(prompt), false, prompt);
 });
 
 test('mode emits full, sparse after ten human turns, and exit reminders', () => {
@@ -32,13 +32,13 @@ test('mode emits full, sparse after ten human turns, and exit reminders', () => 
 });
 
 test('keyword is one-turn opt-in; resume preserves mode; startup clears it', () => {
-  const keyword = transition('UserPromptSubmit', { prompt: 'Please ultracode this', source: 'user' });
+  const keyword = transition('UserPromptSubmit', { prompt: 'Please autocode this', source: 'user' });
   assert.match(keyword.message, /opting this turn/);
   assert.equal(keyword.state.on, false);
-  const active = transition('UserPromptSubmit', { prompt: 'ultracode on', source: 'user' }).state;
+  const active = transition('UserPromptSubmit', { prompt: 'autocode on', source: 'user' }).state;
   assert.match(transition('SessionStart', { source: 'compact' }, active).message, /still on/);
   assert.equal(transition('SessionStart', { source: 'startup' }, active).state.on, false);
-  assert.equal(transition('UserPromptSubmit', { prompt: 'ultracode', source: 'sdk' }, active).message, '');
+  assert.equal(transition('UserPromptSubmit', { prompt: 'autocode', source: 'sdk' }, active).message, '');
 });
 
 test('replayed prompt ID does not count a turn twice', () => {

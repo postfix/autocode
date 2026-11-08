@@ -6,14 +6,16 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createInterface } from 'node:readline/promises';
 import { runWorkflow, workflowMetadata, exportWorkflowJournal, importWorkflowJournal } from './runtime.mjs';
+import { runInstall } from './install.mjs';
 import { codexAgent } from './codex-adapter.mjs';
 import { claudeAgent } from './claude-adapter.mjs';
+import { ompAgent } from './omp-adapter.mjs';
 import { readRunStatus, formatStatus, safeText, projectRunRegistry } from './run-stats.mjs';
 import { controlRun, superviseRun } from './run-control.mjs';
 
 function parseRun(argv) {
   if (argv[0] !== 'run' || !argv[1] || argv[1].startsWith('--'))
-    throw new Error('usage: autocode run <script.js> [--provider codex|claude] [options]');
+    throw new Error('usage: autocode run <script.js> [--provider codex|claude|omp] [options]');
   const scriptPath = resolve(argv[1]);
   const flags = {};
   for (let i = 2; i < argv.length; i++) {
@@ -23,10 +25,10 @@ function parseRun(argv) {
     flags[name] = argv[++i];
   }
   for (const name of Object.keys(flags))
-    if (!['args', 'run-dir', 'resume', 'budget', 'sandbox', 'codex', 'claude', 'provider', 'cwd', 'context'].includes(name))
+    if (!['args', 'run-dir', 'resume', 'budget', 'sandbox', 'codex', 'claude', 'omp', 'provider', 'cwd', 'context'].includes(name))
       throw new Error(`unknown option: --${name}`);
   const provider = flags.provider ?? 'codex';
-  if (!['codex', 'claude'].includes(provider)) throw new Error(`unknown provider: ${provider}`);
+  if (!['codex', 'claude', 'omp'].includes(provider)) throw new Error(`unknown provider: ${provider}`);
   const cwd = resolve(flags.cwd ?? process.cwd());
   const worker = process.env.AUTOCODE_WORKER === '1' && process.send && process.connected;
   const runId = flags.resume ?? process.env.AUTOCODE_LAUNCH_ID ?? (worker ? process.env.AUTOCODE_RUN_ID || undefined : undefined) ?? `wf_${randomUUID()}`;
@@ -87,7 +89,8 @@ function formatRuns(runs) {
 }
 function formatSelection(result) {return `${formatRuns(result.workflows)}\n${result.question}`;}
 
-export async function runAutocode(argv, adapters = { codex: codexAgent, claude: claudeAgent }) {
+export async function runAutocode(argv, adapters = { codex: codexAgent, claude: claudeAgent, omp: ompAgent }) {
+  if (argv[0] === 'install') return runInstall(argv.slice(1));
   if (['export','import'].includes(argv[0])) {
     const flags = {};
     for (let index = 1; index < argv.length; index += 2) {
@@ -161,7 +164,7 @@ export async function runAutocode(argv, adapters = { codex: codexAgent, claude: 
   const result = await runWorkflow({
     script: await readFile(scriptPath, 'utf8'), args, runDir, budget,
     defaultProvider:provider, cwd,
-    executionContext: { sandbox, codex: flags.codex ?? null, claude: flags.claude ?? null },
+    executionContext: { sandbox, codex: flags.codex ?? null, claude: flags.claude ?? null, omp: flags.omp ?? null },
     hostContext: flags.context ? JSON.parse(await readFile(resolve(flags.context), 'utf8')) : undefined,
     subscribeControls: process.send ? handler => {
       const listener = message => {
@@ -181,9 +184,10 @@ export async function runAutocode(argv, adapters = { codex: codexAgent, claude: 
       join(cwd, '.codex', 'workflows', `${reference}.js`) : resolve(cwd, reference.scriptPath), 'utf8'),
     agent: (prompt, opts, context) => {
       const selected = opts.provider ?? provider;
-      if (!['codex', 'claude'].includes(selected)) throw new Error(`unknown provider: ${selected}`);
+      if (!['codex', 'claude', 'omp'].includes(selected)) throw new Error(`unknown provider: ${selected}`);
+      const executable = selected === 'codex' ? flags.codex : selected === 'claude' ? flags.claude : flags.omp;
       return adapters[selected](prompt, { ...opts, sandbox }, {
-        ...context, cwd:context.cwd??cwd, executable: selected === 'codex' ? flags.codex : flags.claude,
+        ...context, cwd:context.cwd??cwd, executable,
       });
     },
   });

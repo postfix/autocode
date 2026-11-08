@@ -67,7 +67,7 @@ The context-forking follow-up is recorded in [CONTEXT-FORKING-RESEARCH.md](CONTE
 
 **Seen in the recovered source:** Workflow supplies the assigned task, optional relay/provenance framing and host context. Its `zR` call does not supply full parent `forkContextMessages` or enable generic agent handback. Native `zR` runs the query loop with inherited system/user context and compaction-window policy. Stalled/lost-reply attempts get fresh agent IDs and the original assigned task. Workflow recovery restores its journal; the missing-journal fallback instructs the parent to read agent transcripts and hand-author a continuation.
 
-Evidence: `ultracode-readable/chunk-2pjf4p7s.js:2938–2978,3111–3134,3549–3590,4491–4537`; native `zR` in `unpacked/claude-unpacked/chunk-x3dkgs4r.js:19`. These are local reverse-engineering artifacts outside the published package.
+Evidence: `autocode-readable/chunk-2pjf4p7s.js:2938–2978,3111–3134,3549–3590,4491–4537`; native `zR` in `unpacked/claude-unpacked/chunk-x3dkgs4r.js:19`. These are local reverse-engineering artifacts outside the published package.
 
 **Seen in Autocode:** each live, uncached logical call creates a fresh provider conversation. Trusted instructions are sent above task text; prior workflow results must be explicitly included in later prompts. Schema repair retains the Codex thread or resumes Claude's session. Runner retries use the original task in a fresh attempt. Journals persist script, args, completed results and usage; they do not restore unfinished provider conversations or parent memory. The optional Codex app-server thread is ephemeral. Provider session IDs/transcripts are not a portable handoff artifact in this package.
 

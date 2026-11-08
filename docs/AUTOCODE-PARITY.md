@@ -1,9 +1,9 @@
-# Ultracode to Autocode parity
+# Autocode parity
 
 The tables below record the earlier 0.1.1 candidate baseline. For the current unreleased Linux implementation, use [PARITY-STATUS.json](PARITY-STATUS.json), [the TDD ledger](../evals/parity-tdd.log), and [live checks from 2026-11-02](../evals/live-parity-2026-11-02.json). Worktree execution, custom prompt suffixes, higher-priority instructions, partial-tail recovery, failed-call usage, explicit host budgets/MCP and background/individual controls have since been implemented. Full parity is still false; the matrix preserves every original finding and its remaining work.
 
 
-This compares the recovered Ultracode instruction surfaces from Claude Code 2.1.310 with the Autocode 0.1.1 candidate. The [recovered prompt assets](../references/source-prompts/) are packaged; extracted bundle modules remain in the investigation workspace. [PROSE-DIFF.md](PROSE-DIFF.md) gives the detailed comparison for every recovered prompt surface, including all subagent variants. “Adapted” means the tool-specific wording changes for Autocode's SDK and CLI interfaces; it does not mean byte-for-byte execution of every prompt.
+This compares the recovered instruction surfaces from Claude Code 2.1.310 with the Autocode 0.1.1 candidate. The [recovered prompt assets](../references/source-prompts/) are packaged; extracted bundle modules remain in the investigation workspace. [PROSE-DIFF.md](PROSE-DIFF.md) gives the detailed comparison for every recovered prompt surface, including all subagent variants. “Adapted” means the tool-specific wording changes for Autocode's SDK and CLI interfaces; it does not mean byte-for-byte execution of every prompt.
 
 ## Prose and prompt surfaces
 
@@ -16,7 +16,7 @@ This compares the recovered Ultracode instruction surfaces from Claude Code 2.1.
 | Text subagent prompts (`Hs`, `Js`) | `references/source-prompts/subagent-prompts.json`, `scripts/subagent-prompt.mjs` | `Hs` is loaded for actual text calls, substituting only the `SendUserMessage` line. `Js` is preserved but inactive because `agentType` is unsupported. |
 | Structured subagent prompts (`zs`, `Ks`) | Same prompt source and SDK schema options | `zs` is loaded for schema calls; five `StructuredOutput` phrases are translated to SDK structured-result language. `Ks` is preserved but inactive. |
 | Shared computed-task note (`jn`) | Included verbatim in active `Hs` and `zs` | A separate permission qualification is appended; computed task text still does not grant new authority. |
-| Keyword reminder (`F0r`) | Codex/Claude plugin `UserPromptSubmit` hook | Scans qualifying human prompts for `ultracode` and emits a one-turn reminder. The installed Codex transcript contains that injected reminder; Claude keyword delivery remains unverified. |
+| Keyword reminder (`F0r`) | Codex/Claude plugin `UserPromptSubmit` hook | Scans qualifying human prompts for `autocode` and emits a one-turn reminder. The installed Codex transcript contains that injected reminder; Claude keyword delivery remains unverified. |
 | Enter, sparse, exit reminders (`$0r`) | Plugin `SessionStart` and `UserPromptSubmit` hooks | Installed Codex and Claude hosts wrote `on:true` and `on:false` session state on entry/exit. Ten-turn sparse delivery and exact source FSM parity remain unverified in installed hosts. |
 | Recovered worked examples and quality prompts | `references/quality-patterns.md` and four executable templates | The review, skeptical verification, sweep, judge panel, loop, and completeness decisions are represented. Examples use Autocode's API and are not text-identical to Claude's examples. |
 
@@ -32,7 +32,7 @@ The candidate package preserves all identified prompt/prose assets and actively 
 | Concurrency and item limits | Implemented | Up to 16 concurrent agents, 1000 calls per workflow, 4096 items per parallel or pipeline call. |
 | Codex and Claude delegation | Implemented through native JavaScript SDKs | Mixed providers can be chosen per call. Live Codex delegation has passed; live Claude success remains unverified. |
 | Structured output | Implemented with different mechanisms | Provider SDK schemas replace Claude's `StructuredOutput` tool. A live eval found and fixed Codex's strict object-schema requirement. |
-| Token budget | Partial | Autocode stops starting calls at a soft output-token target; Ultracode's recovered reference describes a hard shared turn-token ceiling. |
+| Token budget | Partial | Autocode stops starting calls at a soft output-token target; the recovered reference describes a hard shared turn-token ceiling. |
 | Worktree isolation and custom agent types | Missing | Both adapters reject `isolation: 'worktree'` and `agentType` explicitly. |
 | Session-connected MCP tools | Partial/unknown | Autocode does not explicitly forward the host's MCP tool pool; Claude SDK calls use a limited file-tool list. |
 | Background Workflow UI | Missing | The CLI streams progress and returns a result without Claude's notification or `/workflows` UI. |
@@ -42,4 +42,4 @@ The candidate package preserves all identified prompt/prose assets and actively 
 
 The local suite tests the runner, SDK adapter contracts, release package, templates, and property-based invariants. The live skill eval in `evals/live-skill.mjs` passed skill authoring and a separately launched three-agent Codex workflow that found and verified a seeded arithmetic bug. A fully integrated run from inside a sandboxed Codex host failed when nested Codex SDK processes could not initialize their state. The review workflow succeeded when launched directly through the CLI. See `evals/RESULTS.md`.
 
-Autocode therefore has substantial workflow and authoring-pattern coverage, but **does not have full Ultracode parity**. The custom-agent suffixes remain inactive; Claude keyword and ten-turn sparse hook delivery remain unverified. Claude subscription model access is disabled in this organization. The largest execution gap observed locally is nested SDK startup from a sandboxed host. No percentage parity or 100% behavioral coverage is claimed.
+Autocode therefore has substantial workflow and authoring-pattern coverage, but **does not have full parity with the recovered source**. The custom-agent suffixes remain inactive; Claude keyword and ten-turn sparse hook delivery remain unverified. Claude subscription model access is disabled in this organization. The largest execution gap observed locally is nested SDK startup from a sandboxed host. No percentage parity or 100% behavioral coverage is claimed.

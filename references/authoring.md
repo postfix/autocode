@@ -1,6 +1,6 @@
 # Autocode workflow authoring
 
-Read [quality-patterns.md](quality-patterns.md) before designing stages. It carries the recovered Ultracode guidance on pipelines, barriers, independent verification, completeness, and bounded discovery. Choose the work list and the expected result before spawning agents. When a later phase needs the host agent to interpret earlier evidence, run separate workflows and inspect each result before writing the next.
+Read [quality-patterns.md](quality-patterns.md) before designing stages. It carries the recovered Autocode guidance on pipelines, barriers, independent verification, completeness, and bounded discovery. Choose the work list and the expected result before spawning agents. When a later phase needs the host agent to interpret earlier evidence, run separate workflows and inspect each result before writing the next.
 
 The recovered reference describes Claude's embedded host. Autocode does not automatically transfer that host's loaded instruction set, live MCP connections, permissions or model. A trusted integration supplies `hostContext` (or serializable `--context`) for these supported fields. The SDK may load its own project configuration; that is not proof of inheriting the parent's exact context. Workflow source cannot grant itself new host authority.
 

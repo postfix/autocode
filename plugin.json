@@ -1,0 +1,10 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "autocode",
+  "version": "0.1.1",
+  "description": "JavaScript workflow orchestration for coordinating agents (parallel, pipeline, review-and-verify, exhaustive review, plan-code-test-fix-QA loops) across Codex, Claude, and Oh My Pi.",
+  "author": { "name": "postfix" },
+  "repository": "https://github.com/postfix/autocode.git",
+  "license": "Apache-2.0",
+  "keywords": ["workflow", "orchestration", "agents", "codex", "claude", "omp"]
+}
