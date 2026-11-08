@@ -1,7 +1,7 @@
 {
   "name": "autocode-skill",
   "version": "0.1.1",
-  "description": "JavaScript workflow skill for Codex and Claude agents",
+  "description": "JavaScript workflow skill for Codex, Claude, and Oh My Pi agents",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",

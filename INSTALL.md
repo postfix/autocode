@@ -43,32 +43,20 @@ npm ci
 npm test
 ```
 
-For a skill-only checkout without plugin hooks, point both hosts at the same checkout:
-
-```bash
-mkdir -p ~/.codex/skills ~/.claude/skills
-ln -s ~/.local/share/autocode ~/.codex/skills/autocode
-ln -s ~/.local/share/autocode ~/.claude/skills/autocode
-```
-
-Start a new Codex or Claude session to load the skill. In Codex, invoke it with `$autocode` followed by your task; in Claude, ask it to use the `autocode` skill. Codex and Claude can each author a workflow; `--provider` and per-call `provider` choose who executes its agent tasks.
-
-## Install to a specific host (Codex, Claude, or Oh My Pi)
-
-From a checkout, one command installs the runner and the skill for the hosts you choose:
+Then install the runner and the skill for the hosts you choose:
 
 ```bash
 node scripts/autocode.mjs install --target codex
 # or: --target claude | --target omp | --target codex,claude | --target all
 ```
 
-With no `--target` in a terminal, it prompts for the host(s). The installer:
+With no `--target` in a terminal, it prompts for the host(s). The installer links the `autocode` runner into `~/.local/bin` (re-run after pulling a new checkout) and links the skill into each selected host's discovery directory:
 
-- links the `autocode` runner into `~/.local/bin` (re-run after pulling a new checkout),
-- links the skill into each selected host's discovery directory:
-  - Codex → `~/.codex/skills/autocode` (checkout root),
-  - Claude → `~/.claude/skills/autocode` (checkout root),
-  - Oh My Pi → `~/.omp/agent/skills/autocode` (checkout's `skills/autocode`, an OMP-format `SKILL.md` with `name`/`description` frontmatter).
+- Codex → `~/.codex/skills/autocode`
+- Claude → `~/.claude/skills/autocode`
+- Oh My Pi → `~/.omp/agent/skills/autocode`
+
+Start a new Codex, Claude, or OMP session to load the skill. Codex, Claude, and OMP can each author a workflow; `--provider` and per-call `provider` choose who executes its agent tasks. `autocode install --status` reports each installed target and whether it is up to date.
 
 The `autocode` keyword and `autocode on` / `autocode off` session hooks are supplied by the plugin (marketplace) install for Codex and Claude, not by the skill symlink. The npm package also carries `plugin.json` (portable Agent Plugins manifest) and `skills/autocode/SKILL.md`, so OMP can install it via `omp plugin link <checkout>` or a marketplace as a portable plugin.
 

@@ -37,7 +37,7 @@ autocode run inspect.js --provider codex
 
 The `autocode` command is installed by `npm install -g autocode-skill`. From a source checkout, run `node scripts/autocode.mjs` with the same arguments while in that checkout.
 
-`--provider` selects the default for calls without `opts.provider`. Use `--provider claude` to change it. Use `--args '{"target":"src"}'` to supply a JSON value; omitted `args` is `undefined`. `--cwd <directory>` selects the project directory for both SDKs and workflow discovery. Journals default to that project’s `.autocode/runs/<id>/`; `--run-dir <directory>` optionally changes storage without changing the owning project. `--budget <tokens>` sets a soft output-token target: calls already running can make the final total exceed it.
+`--provider` selects the default for calls without `opts.provider`. Use `--provider claude` to change it. Use `--args '{"target":"src"}'` to supply a JSON value; omitted `args` is `undefined`. `--cwd <directory>` selects the project directory for workflow discovery and the delegated agents. Journals default to that project’s `.autocode/runs/<id>/`; `--run-dir <directory>` optionally changes storage without changing the owning project. `--budget <tokens>` sets a soft output-token target: calls already running can make the final total exceed it.
 
 The command returns JSON with `result`, `failures`, `logs`, `agentCount`, `outputTokens`, `runId`, and `runDir`. Progress appears on stderr. To resume, run the same script with the same `--run-dir` and `--resume <runId>`. Successful calls whose inputs and branch history match are reused from `journal.jsonl`.
 
@@ -114,7 +114,7 @@ The embedded `runWorkflow({hostContext})` interface additionally accepts callbac
 
 - `id` and `revision`: required nonempty strings, included in replay identity. Increment the revision when instructions, agent definitions, MCP configuration or policy changes.
 - `instructions`: trusted project instructions delivered above the task text.
-- `providers.codex` and `providers.claude`: `model`, `effort`, `forcedModel`, `forcedEffort`, and provider-native `mcpServers` configuration.
+- `providers.codex`, `providers.claude`, and `providers.omp`: `model`, `effort`, `forcedModel`, and `forcedEffort`. `mcpServers` is Codex/Claude-specific; OMP discovers MCP servers from its own config.
 - `agents`: registry keyed by `agentType`, with `prompt` and optional `tools`/`disallowedTools`. Codex refuses tool-restricted entries rather than dropping their restrictions.
 - `onSpawn({prompt, options, workflow, signal})`: optional async hook; return `{deny: "reason"}` to refuse, or `{prompt, model}` to rewrite those fields. Rewrites participate in replay identity; a forced host model still wins. `workflow` is an immutable `{runId, agentIndex}`. Set `shareWorkflowPrompt: false` to withhold task text from this hook and disable its prompt rewrites.
 - `canUseTool`: Claude SDK permission callback; JSON files cannot supply functions. Both Codex transports refuse contexts that require this unsupported permission callback; ordinary calls without it still run.
@@ -177,7 +177,7 @@ Run `autocode workflows --json` to list saved project workflows and their `whenT
 
 Provider restrictions are optional. Codex supports `disallowedTools: ['Bash']` through its native command-tool switch. Claude supports native `disallowedTools`, trusted custom-agent tool pools and host permission callbacks. These implemented controls remain active.
 
-Other Codex tool denials, custom tool pools and universal host permission callbacks are excluded from the agreed scope. Nonempty `bashCommandClamp` policies are excluded on both providers. An explicitly requested unsupported policy produces a capability error before provider startup; it is never silently ignored. Omitted restrictions and empty command clamps add no restriction, so ordinary execution does not require those capabilities. The scope does not include an engine fork or a Factory executor project. See the [capability scope decision](docs/REMAINING-PARITY-BACKEND.md) and [original requirement matrix](docs/PARITY-STATUS.json).
+Other Codex tool denials, custom tool pools and universal host permission callbacks are excluded from the agreed scope. Nonempty `bashCommandClamp` policies are excluded on all providers. An explicitly requested unsupported policy produces a capability error before provider startup; it is never silently ignored. Omitted restrictions and empty command clamps add no restriction, so ordinary execution does not require those capabilities. The scope does not include an engine fork or a Factory executor project. See the [capability scope decision](docs/REMAINING-PARITY-BACKEND.md) and [original requirement matrix](docs/PARITY-STATUS.json).
 
 New runs register under `.autocode/runs` so startup can run in hosts that protect `.codex`. Project controls also discover legacy `.codex/autocode-runs` directories; existing files are not moved.
 
